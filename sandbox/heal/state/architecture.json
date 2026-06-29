@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 1,
+  "seq": 28,
+  "updatedAt": "2026-06-24T08:25:29.216Z",
+  "nodes": [
+    {
+      "id": "browser",
+      "label": "Browser (Playwright)",
+      "kind": "other",
+      "role": "context",
+      "strategy": "real",
+      "how": null,
+      "stage": 0
+    },
+    {
+      "id": "console",
+      "label": "Console v3 (frontend, :3000)",
+      "kind": "frontend",
+      "role": "context",
+      "strategy": "real",
+      "how": "ghcr.io/formancehq/console-v3:v2.6.2",
+      "stage": 0
+    },
+    {
+      "id": "gateway",
+      "label": "Gateway (Caddy, :8092)",
+      "kind": "service",
+      "role": "context",
+      "strategy": "real",
+      "how": "ghcr.io/formancehq/gateway:latest",
+      "stage": 0
+    },
+    {
+      "id": "payments-api",
+      "label": "Payments API (:8080)",
+      "kind": "service",
+      "role": "sut",
+      "strategy": "real",
+      "how": "go run ./ server",
+      "stage": 0
+    },
+    {
+      "id": "payments-worker",
+      "label": "Payments Worker",
+      "kind": "service",
+      "role": "context",
+      "strategy": "real",
+      "how": "go run ./ worker",
+      "stage": 0
+    },
+    {
+      "id": "postgres",
+      "label": "Postgres (:5432)",
+      "kind": "datastore",
+      "role": "context",
+      "strategy": "real+seed",
+      "how": "postgres:14-alpine",
+      "stage": 0
+    },
+    {
+      "id": "temporal",
+      "label": "Temporal (:7233)",
+      "kind": "orchestrator",
+      "role": "context",
+      "strategy": "real",
+      "how": "temporalio/auto-setup:1.29.1",
+      "stage": 0
+    },
+    {
+      "id": "psp-connector",
+      "label": "PSP Connectors (external)",
+      "kind": "third-party",
+      "role": "out-of-scope",
+      "strategy": "off",
+      "how": "Not needed to display a seeded payment at Stage 0",
+      "stage": 0
+    }
+  ],
+  "edges": [
+    {
+      "from": "browser",
+      "to": "console",
+      "label": "HTTP :3000",
+      "kind": "request"
+    },
+    {
+      "from": "console",
+      "to": "gateway",
+      "label": "API /api",
+      "kind": "request"
+    },
+    {
+      "from": "gateway",
+      "to": "payments-api",
+      "label": "proxy → :8080",
+      "kind": "request"
+    },
+    {
+      "from": "payments-api",
+      "to": "postgres",
+      "label": "SQL read/write",
+      "kind": "data"
+    },
+    {
+      "from": "payments-api",
+      "to": "temporal",
+      "label": "start workflows",
+      "kind": "request"
+    },
+    {
+      "from": "payments-worker",
+      "to": "temporal",
+      "label": "poll tasks",
+      "kind": "request"
+    },
+    {
+      "from": "payments-worker",
+      "to": "postgres",
+      "label": "SQL read/write",
+      "kind": "data"
+    },
+    {
+      "from": "payments-worker",
+      "to": "psp-connector",
+      "label": "poll/ingest (substituted)",
+      "kind": "external"
+    }
+  ],
+  "resetStrategy": "truncate-per-file",
+  "entities": [
+    {
+      "id": "connector",
+      "lives": {
+        "node": "postgres",
+        "container": "payments db",
+        "schema": "public"
+      },
+      "tag": "context",
+      "createdBy": "direct-db-seed",
+      "from": "goldenSeed",
+      "stage": 0,
+      "ids": {
+        "id": "eyJDb25uZWN0b3JJRCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSIsIlByb3ZpZGVyIjoiZHVtbXlwYXkifQ"
+      }
+    },
+    {
+      "id": "payment",
+      "lives": {
+        "node": "postgres",
+        "container": "payments db",
+        "schema": "public"
+      },
+      "tag": "context",
+      "createdBy": "direct-db-seed",
+      "from": "goldenSeed",
+      "stage": 0,
+      "ids": {
+        "connector_id": "<connector.id>",
+        "reference": "HEAL-SEED-PAYMENT-0001"
+      }
+    },
+    {
+      "id": "payment_adjustment",
+      "lives": {
+        "node": "postgres",
+        "container": "payments db",
+        "schema": "public"
+      },
+      "tag": "context",
+      "createdBy": "direct-db-seed",
+      "from": "goldenSeed",
+      "stage": 0,
+      "ids": {
+        "payment_id": "<payment.id>",
+        "status": "SUCCEEDED"
+      }
+    },
+    {
+      "id": "dummypay-connector",
+      "lives": {
+        "node": "payments-api",
+        "container": "payments db",
+        "schema": "public"
+      },
+      "tag": "sut",
+      "createdBy": "drive-real-action",
+      "from": "goldenSeed",
+      "stage": 1,
+      "ids": {
+        "name": "heal-dummypay",
+        "provider": "dummypay",
+        "directory": "/dummypay"
+      }
+    },
+    {
+      "id": "dummypay-accounts",
+      "lives": {
+        "node": "postgres",
+        "container": "payments db",
+        "schema": "public"
+      },
+      "tag": "context",
+      "createdBy": "app-self-seed",
+      "from": "goldenSeed",
+      "stage": 1,
+      "ids": {
+        "acct1": "heal-dummy-acct-001",
+        "acct2": "heal-dummy-acct-002"
+      }
+    },
+    {
+      "id": "dummypay-balances",
+      "lives": {
+        "node": "postgres",
+        "container": "payments db",
+        "schema": "public"
+      },
+      "tag": "context",
+      "createdBy": "app-self-seed",
+      "from": "goldenSeed",
+      "stage": 1,
+      "ids": {
+        "acct1_usd": "1500000",
+        "acct2_eur": "2750000"
+      }
+    },
+    {
+      "id": "transfer-initiation",
+      "lives": {
+        "node": "payments-api",
+        "container": "payments db",
+        "schema": "public"
+      },
+      "tag": "sut",
+      "createdBy": "drive-real-action",
+      "from": "goldenSeed",
+      "stage": 2,
+      "ids": {
+        "type": "TRANSFER",
+        "amount": "1000",
+        "asset": "USD/2",
+        "source": "heal-dummy-acct-001",
+        "destination": "heal-dummy-acct-002"
+      }
+    },
+    {
+      "id": "account-pool",
+      "lives": {
+        "node": "payments-api",
+        "container": "payments db",
+        "schema": "public"
+      },
+      "tag": "sut",
+      "createdBy": "drive-real-action",
+      "from": "goldenSeed",
+      "stage": 2,
+      "ids": {
+        "members": "heal-dummy-acct-001 + heal-dummy-acct-002",
+        "aggregate_usd": "1500000",
+        "aggregate_eur": "2750000"
+      }
+    },
+    {
+      "id": "payout-bank-account",
+      "lives": {
+        "node": "payments-api",
+        "container": "payments.bank_accounts",
+        "schema": null
+      },
+      "tag": "sut",
+      "createdBy": "drive-real-action",
+      "from": "POST /v3/bank-accounts then POST /v3/bank-accounts/{id}/forward (dummypay)",
+      "stage": 4,
+      "ids": {}
+    },
+    {
+      "id": "payout-initiation",
+      "lives": {
+        "node": "payments-api",
+        "container": "payments.payment_initiations",
+        "schema": null
+      },
+      "tag": "sut",
+      "createdBy": "drive-real-action",
+      "from": "POST /v3/payment-initiations (type PAYOUT) then POST /v3/payment-initiations/{id}/reverse",
+      "stage": 4,
+      "ids": {}
+    }
+  ]
+}

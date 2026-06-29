@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "seq": 190,
+  "updatedAt": "2026-06-24T15:05:22.579Z",
+  "mode": "verify",
+  "selected": {
+    "kind": "feature",
+    "id": "payment-service-user-connections",
+    "name": "Payment Service User Connections"
+  },
+  "run": {
+    "kind": "feature",
+    "id": "payment-service-user-connections",
+    "name": "Payment Service User Connections",
+    "phases": [
+      {
+        "id": 0,
+        "key": "spec",
+        "title": "Spec",
+        "status": "done"
+      },
+      {
+        "id": 1,
+        "key": "sandbox",
+        "title": "Sandbox",
+        "status": "done"
+      },
+      {
+        "id": 2,
+        "key": "crawl",
+        "title": "Crawl",
+        "status": "done"
+      },
+      {
+        "id": 3,
+        "key": "author",
+        "title": "Author tests",
+        "status": "done"
+      },
+      {
+        "id": 4,
+        "key": "test",
+        "title": "Run tests",
+        "status": "done"
+      },
+      {
+        "id": 5,
+        "key": "verdict",
+        "title": "Verdict",
+        "status": "done"
+      }
+    ]
+  },
+  "targets": [
+    {
+      "kind": "journey",
+      "id": "onboard-connector-basic",
+      "name": "Connector Installation & Discovery",
+      "phase": null,
+      "status": "done"
+    },
+    {
+      "kind": "journey",
+      "id": "execute-internal-transfer",
+      "name": "Internal Transfer Execution",
+      "phase": null,
+      "status": "done"
+    },
+    {
+      "kind": "journey",
+      "id": "payout-to-external-account",
+      "name": "Payout Workflow with Reversal",
+      "phase": null,
+      "status": "done"
+    },
+    {
+      "kind": "journey",
+      "id": "pool-balance-snapshot",
+      "name": "Account Pool & Balance Aggregation",
+      "phase": null,
+      "status": "done"
+    },
+    {
+      "kind": "feature",
+      "id": "connector-install",
+      "name": "Install Connector",
+      "phase": null,
+      "status": "done"
+    },
+    {
+      "kind": "feature",
+      "id": "connector-uninstall",
+      "name": "Uninstall Connector",
+      "phase": null,
+      "status": "done"
+    },
+    {
+      "kind": "feature",
+      "id": "bank-account-create",
+      "name": "Create Bank Account",
+      "phase": null,
+      "status": "done"
+    },
+    {
+      "kind": "feature",
+      "id": "bank-account-forward",
+      "name": "Forward Bank Account",
+      "phase": null,
+      "status": "done"
+    },
+    {
+      "kind": "feature",
+      "id": "payment-initiation-create",
+      "name": "Create Payment Initiation (Transfer/Payout)",
+      "phase": null,
+      "status": "done"
+    },
+    {
+      "kind": "feature",
+      "id": "payment-initiation-reverse",
+      "name": "Reverse Payment Initiation",
+      "phase": null,
+      "status": "done"
+    },
+    {
+      "kind": "feature",
+      "id": "account-polling",
+      "name": "Account Polling",
+      "phase": null,
+      "status": "done"
+    },
+    {
+      "kind": "feature",
+      "id": "balance-polling",
+      "name": "Balance Polling",
+      "phase": null,
+      "status": "done"
+    },
+    {
+      "kind": "feature",
+      "id": "payment-polling",
+      "name": "Payment Polling",
+      "phase": null,
+      "status": "done"
+    },
+    {
+      "kind": "feature",
+      "id": "webhook-events",
+      "name": "Webhook Events",
+      "phase": null,
+      "status": "done"
+    },
+    {
+      "kind": "feature",
+      "id": "pool-management",
+      "name": "Pool Management",
+      "phase": null,
+      "status": "done"
+    },
+    {
+      "kind": "feature",
+      "id": "payment-service-user-connections",
+      "name": "Payment Service User Connections",
+      "phase": null,
+      "status": "done"
+    }
+  ]
+}

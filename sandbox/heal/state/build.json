@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "seq": 85,
+  "updatedAt": "2026-06-24T10:28:18.032Z",
+  "mode": "grow",
+  "feature": "payment-service-user-connections",
+  "phases": [
+    {
+      "key": "workspace",
+      "id": 0,
+      "status": "done"
+    },
+    {
+      "key": "topology",
+      "id": 1,
+      "status": "done"
+    },
+    {
+      "key": "boundary",
+      "id": 2,
+      "status": "done"
+    },
+    {
+      "key": "substitution",
+      "id": 3,
+      "status": "done"
+    },
+    {
+      "key": "data",
+      "id": 4,
+      "status": "done"
+    },
+    {
+      "key": "auth",
+      "id": 5,
+      "status": "done"
+    },
+    {
+      "key": "playwright",
+      "id": 6,
+      "status": "done"
+    },
+    {
+      "key": "synthesize",
+      "id": 7,
+      "status": "done"
+    }
+  ],
+  "crossings": [
+    {
+      "id": "psp-connector",
+      "node": "psp-connector",
+      "provider": "dummypay",
+      "hasWire": true,
+      "rung": "off",
+      "location": "none",
+      "wireVia": "none",
+      "isolation": "create-and-delete",
+      "fidelity": "neutralize",
+      "reverify": "Re-confirm at each stage that the skeleton journey still crosses no PSP traffic: the seeded payment must render in Console purely from direct-db-seeded rows, with no connector installed and the worker polling nothing. If a future stage adds a polling/ingestion journey, this crossing must be re-classified off→behavioral (dummypay plugin or spec-mock PSP) and re-verified. Reset is truncate-per-file, which re-seeds the connector+payment+adjustment between spec files.",
+      "note": "Stage 0 skeleton: PSP connector is OFF — no connector installed, so the worker never polls an external PSP. The payment that ingestion would normally produce is instead direct-db-seeded (connector + payment + adjustment rows with fixed IDs). Nothing to author; no mock server. Behavioral substitution (e.g. dummypay plugin or a spec-mock PSP) is deferred to a later stage if a polling/ingestion journey is added.",
+      "step": "verify",
+      "verified": true
+    },
+    {
+      "id": "dummypay-polling",
+      "node": "psp-connector",
+      "provider": "dummypay",
+      "hasWire": false,
+      "rung": "real-provider",
+      "location": "inproc-module",
+      "wireVia": "connector install config {directory:\"/dummypay\"} + compose volume mount (HEAL_FIXTURES_DIR → /dummypay) + `-tags it` command in docker-compose.heal.yml",
+      "isolation": "create-and-delete",
+      "fidelity": "behavioral",
+      "reverify": "VERIFIED LIVE: installed dummypay (config directory=/dummypay, pollingPeriod=30m — note min is 20m), worker polled both fixture accounts (heal-dummy-acct-001 USD/2, -002 EUR/2) and balance 1500000 USD/2 (matches balances.json amount_in_minors). Anti-drift: fixtures (accounts/balances.json) are the source of truth; the assertion reads them via SEED symbols. Re-verify each stage that the `-tags it` command + /dummypay mount are present (docker inspect Config.Cmd contains `it`, Mounts has /dummypay) — without the `it` tag dummypay install returns ErrNotImplemented. Reset truncate-per-file wipes connectors+accounts+balances between spec files; the journey re-installs per run in its own namespace.",
+      "note": "Real dummypay connector runs in-process (plugin linked into the binary, debug-gated). Build delta: (1) compose override docker-compose.heal.yml runs server+worker with `go run -tags it ./` so dummypay's real install+polling workflow is compiled in (non-`it` install returns ErrNotImplemented); (2) fixtures dir stack/infra/dummypay-fixtures/{accounts,balances,payments}.json mounted rw at /dummypay; the journey installs the connector with config {directory:/dummypay}. No mock — the real plugin reads the fixtures and the real worker polls.",
+      "step": "verify",
+      "verified": true
+    }
+  ],
+  "skeletonReady": true
+}

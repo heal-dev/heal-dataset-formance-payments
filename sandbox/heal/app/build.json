@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "seq": 85,
+  "updatedAt": "2026-06-24T10:28:18.032Z",
+  "mode": "grow",
+  "feature": "payment-service-user-connections",
+  "skeletonReady": true,
+  "phases": [
+    {
+      "id": 0,
+      "key": "workspace",
+      "title": "Workspace & target",
+      "status": "done"
+    },
+    {
+      "id": 1,
+      "key": "topology",
+      "title": "Topology",
+      "status": "done"
+    },
+    {
+      "id": 2,
+      "key": "boundary",
+      "title": "Boundary",
+      "status": "done"
+    },
+    {
+      "id": 3,
+      "key": "substitution",
+      "title": "Substitution",
+      "status": "done"
+    },
+    {
+      "id": 4,
+      "key": "data",
+      "title": "Data plane",
+      "status": "done"
+    },
+    {
+      "id": 5,
+      "key": "auth",
+      "title": "Auth",
+      "status": "done"
+    },
+    {
+      "id": 6,
+      "key": "playwright",
+      "title": "Playwright wiring",
+      "status": "done"
+    },
+    {
+      "id": 7,
+      "key": "synthesize",
+      "title": "Synthesize & smoke",
+      "status": "done"
+    }
+  ],
+  "crossings": [
+    {
+      "id": "psp-connector",
+      "node": "psp-connector",
+      "provider": "dummypay",
+      "step": "verify",
+      "verified": true
+    },
+    {
+      "id": "dummypay-polling",
+      "node": "psp-connector",
+      "provider": "dummypay",
+      "step": "verify",
+      "verified": true
+    }
+  ]
+}

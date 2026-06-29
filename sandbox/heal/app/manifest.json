@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 4,
+  "seq": 190,
+  "updatedAt": "2026-06-24T15:05:22.579Z",
+  "workspace": "/Users/malo/heal/sandbox-examples/formance-payments",
+  "sandbox": "/Users/malo/heal/sandbox-examples/formance-payments/sandbox",
+  "scope": "payments",
+  "mode": "verify",
+  "status": {
+    "phase": "P3-crawl",
+    "selected": {
+      "kind": "feature",
+      "id": "payment-service-user-connections",
+      "name": "Payment Service User Connections"
+    },
+    "sandbox": "skeleton-ready"
+  },
+  "counts": {
+    "features": 12,
+    "flows": 12,
+    "scenarios": 67,
+    "journeys": 4,
+    "verdicts": {
+      "unverified": 6,
+      "true": 70,
+      "false": 0,
+      "bug-gap": 7
+    }
+  },
+  "files": {
+    "view": "heal/app/view.json",
+    "architecture": "heal/app/architecture.json",
+    "build": "heal/app/build.json",
+    "cover": "heal/app/cover.json",
+    "bugs": "heal/app/bugs.json",
+    "traces": "heal-traces/"
+  }
+}

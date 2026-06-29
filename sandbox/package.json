@@ -1,0 +1,23 @@
+{
+  "name": "formance-payments-sandbox",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Heal E2E sandbox for Formance Payments — Console → seeded Payment skeleton",
+  "type": "module",
+  "scripts": {
+    "install:sandbox": "bash scripts/install.sh",
+    "infra:up": "bash scripts/infra-up.sh",
+    "infra:down": "bash scripts/infra-down.sh",
+    "test": "bash scripts/infra-up.sh && playwright test",
+    "test:only": "playwright test",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@heal-dev/heal-playwright-tracer": "^1.0.26",
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

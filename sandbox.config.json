@@ -1,0 +1,30 @@
+{
+  "target": "local",
+  "app": "formance-payments",
+  "entry": {
+    "url": "http://localhost:3000/formance/localhost?region=localhost",
+    "frontend": "console-v3"
+  },
+  "seededEntity": "payment",
+  "auth": {
+    "strategy": "none",
+    "tier": null,
+    "reason": "Local stack has no auth gate: Caddy gateway proxies /api/payments via handle_path_route_without_auth (no JWT), MICRO_STACK=1, no identity provider in compose. The Console→Payment journey needs no login/token/seeded identity.",
+    "identity": null,
+    "inputs": [],
+    "smoke": null
+  },
+  "stack": {
+    "launch": "docker compose up",
+    "requiredEnv": {
+      "STACK_PUBLIC_URL": "http://localhost:8080"
+    },
+    "services": {
+      "console": "http://localhost:3000",
+      "gateway": "http://localhost:8092",
+      "paymentsApi": "http://localhost:8080",
+      "temporalUi": "http://localhost:8081",
+      "postgres": "localhost:5432"
+    }
+  }
+}

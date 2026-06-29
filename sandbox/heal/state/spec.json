@@ -1,0 +1,2427 @@
+{
+ "schemaVersion": 1,
+ "workspace": "/Users/malo/heal/sandbox-examples/formance-payments",
+ "repos": [
+  "payments"
+ ],
+ "scope": "payments",
+ "personas": [
+  {
+   "name": "Ops Engineer",
+   "description": "Operates the Formance Payments stack: installs connectors and verifies that data (accounts, balances) flows in from the PSP.",
+   "provenance": {
+    "signals": [
+     "docs"
+    ],
+    "cites": [
+     {
+      "file": "payments/QA_PLAYBOOK.MD",
+      "lines": "5-9"
+     }
+    ],
+    "confidence": "documented"
+   }
+  }
+ ],
+ "flow": {
+  "nodes": [],
+  "edges": []
+ },
+ "features": [
+  {
+   "id": "payment-initiation-create",
+   "name": "Create Payment Initiation (Transfer/Payout)",
+   "provenance": {
+    "signals": [
+     "docs",
+     "code"
+    ],
+    "cites": [
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "130-130"
+     },
+     {
+      "file": "payments/internal/api/v3/handler_payment_initiations_create.go",
+      "lines": "39-103"
+     },
+     {
+      "file": "payments/QA_PLAYBOOK.MD",
+      "lines": "18-19"
+     }
+    ],
+    "confidence": "documented"
+   },
+   "flows": [
+    {
+     "id": "payment-initiation-create-flow",
+     "title": "Create a payment initiation",
+     "story": "As an Ops Engineer, I initiate a transfer or payout between accounts so that money movement is requested and recorded as a payment initiation.",
+     "persona": "Ops Engineer",
+     "steps": [
+      "POST /v3/payment-initiations with a JSON body {reference (short, 3-1000 chars), connectorID, type (TRANSFER|PAYOUT), amount (minor units), asset, scheduledAt (FUTURE), sourceAccountID (optional), destinationAccountID (required)}.",
+      "Receive 202 Accepted with body {data:{paymentInitiationID, taskID}} \u2014 paymentInitiationID is the base64url PaymentInitiationID; taskID may be empty.",
+      "GET /v3/payment-initiations and see the new initiation as a row with fields id, connectorID, provider, reference, createdAt, scheduledAt, description, type, sourceAccountID, destinationAccountID, amount, asset, metadata, status."
+     ],
+     "provenance": {
+      "signals": [
+       "docs",
+       "code"
+      ],
+      "cites": [
+       {
+        "file": "payments/internal/api/v3/handler_payment_initiations_create.go",
+        "lines": "39-103"
+       },
+       {
+        "file": "payments/QA_PLAYBOOK.MD",
+        "lines": "18-19"
+       }
+      ],
+      "confidence": "documented"
+     },
+     "scenarios": [
+      {
+       "id": "PIC-S1",
+       "statement": "When the Ops Engineer initiates a TRANSFER between two internal accounts (POST /v3/payment-initiations, type TRANSFER) with a valid future scheduledAt, the system shall accept it (202), return {data:{paymentInitiationID, taskID}}, and the initiation shall appear in GET /v3/payment-initiations with type TRANSFER. [CRAWL-CONFIRMED: 202 \u2192 {data:{paymentInitiationID:<base64>, taskID:\"\"}}; list row has type=TRANSFER. NOTE: taskID came back empty (\"\") on a future-scheduled create. DIVERGENCE: with NO ?noValidation query param, the created initiation's status was WAITING_FOR_VALIDATION (not auto SCHEDULED_FOR_PROCESSING) \u2014 assert it is RECORDED as a TRANSFER, not on a 'succeeded' status. Reference must be SHORT (Temporal WorkflowId length limit); scheduledAt must be future.]",
+       "kind": "happy-path",
+       "coverage": "covered-by-flow",
+       "coveredBy": "payment-initiation-create-flow",
+       "provenance": {
+        "signals": [
+         "docs",
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_initiations_create.go",
+          "lines": "92-102"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/flows/payment-initiation-create.spec.ts",
+       "featureFile": "e2e/flows/payment-initiation-create.feature"
+      },
+      {
+       "id": "PIC-S2",
+       "statement": "When the Ops Engineer initiates a PAYOUT to a forwarded external account (POST /v3/payment-initiations, type PAYOUT), the system shall accept it (202) and the initiation shall appear with type PAYOUT. [CRAWL-CONFIRMED: forwarded a bank account to the dummypay connector \u2192 an EXTERNAL account materialized within ~1s (GET /v3/bank-accounts/{id} \u2192 relatedAccounts[0].accountID); POST type PAYOUT (source=internal acct-001, destination=external) \u2192 202 {data:{paymentInitiationID:<base64>, taskID:\"\"}}; list row has type=PAYOUT, status=WAITING_FOR_VALIDATION.]",
+       "kind": "distinct",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "docs",
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_initiations_create.go",
+          "lines": "24-24"
+         },
+         {
+          "file": "payments/QA_PLAYBOOK.MD",
+          "lines": "19-19"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-initiation-create/PIC-S2-payout.spec.ts",
+       "featureFile": "e2e/scenarios/payment-initiation-create/PIC-S2-payout.feature"
+      },
+      {
+       "id": "PIC-S3",
+       "statement": "When a required field is missing (e.g. destinationAccountID, amount, asset, type, or reference), the system shall reject it with 400 VALIDATION. [CRAWL-CONFIRMED: POST omitting destinationAccountID \u2192 400 {errorCode:VALIDATION, errorMessage:'DestinationAccountID is a required field'}. NB: sourceAccountID is OPTIONAL (omitempty) \u2014 only destinationAccountID is required.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_initiations_create.go",
+          "lines": "19-30"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-initiation-create/PIC-validation-guards.spec.ts",
+       "featureFile": "e2e/scenarios/payment-initiation-create/PIC-validation-guards.feature"
+      },
+      {
+       "id": "PIC-S4",
+       "statement": "When scheduledAt is in the past, the system shall reject it with 400 VALIDATION (scheduledAt must be in the future). [CRAWL-CONFIRMED: POST with a past scheduledAt \u2192 400 {errorCode:VALIDATION, errorMessage:'ScheduledAt must be greater than the current Date & Time'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_initiations_create.go",
+          "lines": "21-21"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-initiation-create/PIC-validation-guards.spec.ts",
+       "featureFile": "e2e/scenarios/payment-initiation-create/PIC-validation-guards.feature"
+      },
+      {
+       "id": "PIC-S5",
+       "statement": "When the type is not a valid payment initiation type (not TRANSFER/PAYOUT), the system shall reject it with 400 VALIDATION. [CRAWL-CONFIRMED: POST with type 'BOGUS' \u2192 400 {errorCode:VALIDATION, errorMessage:'Type is invalid'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_initiations_create.go",
+          "lines": "24-24"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-initiation-create/PIC-validation-guards.spec.ts",
+       "featureFile": "e2e/scenarios/payment-initiation-create/PIC-validation-guards.feature"
+      },
+      {
+       "id": "PIC-S6",
+       "statement": "When the reference is shorter than 3 characters (fails gte=3), the system shall reject it with 400 VALIDATION. [CRAWL-CONFIRMED 2026-06-24: POST /v3/payment-initiations with reference 'ab' \u2192 400 {errorCode:VALIDATION, errorMessage:'Reference must be at least 3 characters in length'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_initiations_create.go",
+          "lines": "20-20"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-initiation-create/PIC-validation-guards-2.spec.ts",
+       "featureFile": "e2e/scenarios/payment-initiation-create/PIC-validation-guards-2.feature"
+      },
+      {
+       "id": "PIC-S7",
+       "statement": "When the asset is not a valid asset (fails the asset validator), the system shall reject it with 400 VALIDATION. [CRAWL-CONFIRMED 2026-06-24: POST with asset 'NOTANASSET' \u2192 400 {errorCode:VALIDATION, errorMessage:'Asset is invalid'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_initiations_create.go",
+          "lines": "25-25"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-initiation-create/PIC-validation-guards-2.spec.ts",
+       "featureFile": "e2e/scenarios/payment-initiation-create/PIC-validation-guards-2.feature"
+      },
+      {
+       "id": "PIC-S8",
+       "statement": "A negative amount is currently ACCEPTED: the create request validates Amount as 'required' only (no sign/min-value guard), so a negative amount is recorded rather than rejected. [CRAWL-OBSERVED 2026-06-24: POST with amount:-100 \u2192 202 {data:{paymentInitiationID:<base64>, taskID:''}} (NOT a 400). This documents a MISSING guard \u2014 a negative payment-initiation amount is accepted. Flag at verify: likely a product gap (amount should be > 0), but the test asserts the current behaviour so it does not certify it as intended.]",
+       "kind": "branch",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_initiations_create.go",
+          "lines": "24-24"
+         }
+        ],
+        "confidence": "inferred"
+       },
+       "testFile": "e2e/scenarios/payment-initiation-create/PIC-validation-guards-2.spec.ts",
+       "featureFile": "e2e/scenarios/payment-initiation-create/PIC-validation-guards-2.feature"
+      }
+     ],
+     "testFile": "e2e/flows/payment-initiation-create.spec.ts",
+     "featureFile": "e2e/flows/payment-initiation-create.feature"
+    }
+   ]
+  },
+  {
+   "id": "payment-initiation-reverse",
+   "name": "Reverse Payment Initiation",
+   "provenance": {
+    "signals": [
+     "docs",
+     "code"
+    ],
+    "cites": [
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "139-139"
+     },
+     {
+      "file": "payments/internal/api/v3/handler_payment_initiations_reverse.go",
+      "lines": "31-90"
+     },
+     {
+      "file": "payments/QA_PLAYBOOK.MD",
+      "lines": "20-21"
+     }
+    ],
+    "confidence": "documented"
+   },
+   "flows": [
+    {
+     "id": "payment-initiation-reverse-flow",
+     "title": "Reverse a payment initiation",
+     "story": "As an Ops Engineer, I reverse an existing payment initiation so that the requested money movement is undone and the reversal is recorded as an adjustment against it.",
+     "persona": "Ops Engineer",
+     "steps": [
+      "POST /v3/payment-initiations/{id}/reverse with a JSON body {reference (short, 3-1000 chars), amount (minor units), asset, description (optional), metadata (optional)}.",
+      "Receive 202 Accepted with body {data:{paymentInitiationReversalID, taskID}}.",
+      "GET /v3/payment-initiations/{id}/adjustments and see the reversal recorded as an adjustment against the initiation."
+     ],
+     "provenance": {
+      "signals": [
+       "docs",
+       "code"
+      ],
+      "cites": [
+       {
+        "file": "payments/internal/api/v3/handler_payment_initiations_reverse.go",
+        "lines": "31-90"
+       },
+       {
+        "file": "payments/QA_PLAYBOOK.MD",
+        "lines": "20-21"
+       }
+      ],
+      "confidence": "documented"
+     },
+     "scenarios": [
+      {
+       "id": "PIR-S1",
+       "statement": "When the Ops Engineer reverses an existing payment initiation (POST /v3/payment-initiations/{id}/reverse with a valid {reference, amount, asset}), the system shall accept it (202), return {data:{paymentInitiationReversalID, taskID}}, and the reversal shall be recorded as an adjustment visible in GET /v3/payment-initiations/{id}/adjustments. [INTENT per handler api.Accepted(...) + QA_PLAYBOOK 'Reverse a Payout/Transfer'. CRAWL-CONFIRMED PRODUCT BUG (reproduced 2026-06-24): reverse of a valid initiation with a valid SHORT body returns HTTP 500 {errorCode:INTERNAL, errorMessage:'Internal error. Consult logs/traces to have more details.'} \u2014 the documented 202 {data:{paymentInitiationReversalID, taskID}} is NEVER returned and NO reversal adjustment is recorded (GET .../adjustments shows only the initiation's own creation adjustment). Root cause (from code): Temporal 'WorkflowId length exceeds limit' on the reverse-payout workflow id (engine.go ReversePayout builds the id from reverse-payout-<stack>-<CreatedAt> + connectorID + reversal.ID; the connectorID blob dominates \u2192 overflow). NOT fixable by shortening the request reference. Adjudicate as a bug-gap at verify.]",
+       "kind": "happy-path",
+       "coverage": "covered-by-flow",
+       "coveredBy": "payment-initiation-reverse-flow",
+       "provenance": {
+        "signals": [
+         "docs",
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_initiations_reverse.go",
+          "lines": "83-89"
+         }
+        ],
+        "confidence": "inferred"
+       },
+       "testFile": "e2e/flows/payment-initiation-reverse.spec.ts",
+       "featureFile": "e2e/flows/payment-initiation-reverse.feature"
+      },
+      {
+       "id": "PIR-S2",
+       "statement": "When the reverse is requested with a malformed/invalid payment initiation id (not a valid PaymentInitiationID), the system shall reject it with 400 INVALID_ID and not start a reversal. [CRAWL-CONFIRMED: POST /v3/payment-initiations/not-a-valid-id/reverse \u2192 400 {errorCode:INVALID_ID, errorMessage:'invalid character ... looking for beginning of value' (base64-decode failure)}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_initiations_reverse.go",
+          "lines": "38-43"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-initiation-reverse/PIR-validation-guards.spec.ts",
+       "featureFile": "e2e/scenarios/payment-initiation-reverse/PIR-validation-guards.feature"
+      },
+      {
+       "id": "PIR-S3",
+       "statement": "When the reverse body is missing a required field (reference, amount, or asset), the system shall reject it with 400 VALIDATION. [CRAWL-CONFIRMED: POST .../reverse omitting amount \u2192 400 {errorCode:VALIDATION, errorMessage:'Amount is a required field'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_initiations_reverse.go",
+          "lines": "18-23"
+         },
+         {
+          "file": "payments/internal/api/v3/handler_payment_initiations_reverse.go",
+          "lines": "53-58"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-initiation-reverse/PIR-validation-guards.spec.ts",
+       "featureFile": "e2e/scenarios/payment-initiation-reverse/PIR-validation-guards.feature"
+      },
+      {
+       "id": "PIR-S4",
+       "statement": "When the reverse body carries an invalid asset (fails the asset format validator), the system shall reject it with 400 VALIDATION. [CRAWL-CONFIRMED: POST .../reverse with asset 'NOTANASSET' \u2192 400 {errorCode:VALIDATION, errorMessage:'Asset is invalid'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_initiations_reverse.go",
+          "lines": "22-22"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-initiation-reverse/PIR-validation-guards.spec.ts",
+       "featureFile": "e2e/scenarios/payment-initiation-reverse/PIR-validation-guards.feature"
+      },
+      {
+       "id": "PIR-S5",
+       "statement": "When the reverse targets a well-formed but non-existent payment initiation id (valid id encoding, no such initiation), the system shall reject it with 404 NOT_FOUND and record no reversal. [CRAWL-CONFIRMED 2026-06-24: POST /v3/payment-initiations/<well-formed non-existent id>/reverse {reference,amount,asset} \u2192 404 {errorCode:NOT_FOUND, errorMessage:'cannot get payment initiation: not found'}. Note: the not-found check fires BEFORE the reverse workflow construction, so this path returns a clean 404 \u2014 unlike PIR-S1 where a VALID initiation hits the 500 WorkflowId-overflow bug.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_initiations_reverse.go",
+          "lines": "60-90"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-initiation-reverse/PIR-S5-nonexistent.spec.ts",
+       "featureFile": "e2e/scenarios/payment-initiation-reverse/PIR-S5-nonexistent.feature"
+      }
+     ],
+     "testFile": "e2e/flows/payment-initiation-reverse.spec.ts",
+     "featureFile": "e2e/flows/payment-initiation-reverse.feature"
+    }
+   ]
+  },
+  {
+   "id": "account-polling",
+   "name": "Account Polling",
+   "provenance": {
+    "signals": [
+     "docs",
+     "code"
+    ],
+    "cites": [
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "28-29"
+     },
+     {
+      "file": "payments/internal/api/v3/handler_accounts_list.go",
+      "lines": "14-40"
+     },
+     {
+      "file": "payments/QA_PLAYBOOK.MD",
+      "lines": "29-29"
+     }
+    ],
+    "confidence": "documented"
+   },
+   "flows": [
+    {
+     "id": "account-polling-flow",
+     "title": "Worker polls the connector's accounts on install",
+     "story": "As an Ops Engineer, I install a connector so that the worker fetches the connector's accounts from the PSP and they become visible in the accounts list.",
+     "persona": "Ops Engineer",
+     "steps": [
+      "Install a dummypay connector (POST /v3/connectors/install/dummypay) pointing at the mounted fixtures.",
+      "The worker polls on install and fetches the connector's internal accounts from the PSP fixtures.",
+      "GET /v3/accounts and see the two internal accounts (heal-dummy-acct-001 USD/2, heal-dummy-acct-002 EUR/2) listed with type INTERNAL for that connector."
+     ],
+     "provenance": {
+      "signals": [
+       "docs",
+       "code"
+      ],
+      "cites": [
+       {
+        "file": "payments/QA_PLAYBOOK.MD",
+        "lines": "29-29"
+       },
+       {
+        "file": "payments/internal/api/v3/handler_accounts_list.go",
+        "lines": "14-40"
+       }
+      ],
+      "confidence": "documented"
+     },
+     "scenarios": [
+      {
+       "id": "AP-S1",
+       "statement": "When the Ops Engineer installs a connector, the worker shall fetch the connector's internal accounts on install and they shall appear in GET /v3/accounts with type INTERNAL \u2014 for dummypay, heal-dummy-acct-001 (USD/2) and heal-dummy-acct-002 (EUR/2). [CONFIRMED across the onboard-connector-basic / execute-internal-transfer / pool-balance-snapshot journeys: both internal accounts surface for the connector within ~1-2s of install.]",
+       "kind": "happy-path",
+       "coverage": "covered-by-flow",
+       "coveredBy": "account-polling-flow",
+       "provenance": {
+        "signals": [
+         "docs",
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/QA_PLAYBOOK.MD",
+          "lines": "29-29"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/flows/account-polling.spec.ts",
+       "featureFile": "e2e/flows/account-polling.feature"
+      },
+      {
+       "id": "AP-S2",
+       "statement": "When a bank account is created and forwarded to the connector, the worker shall fetch it as an EXTERNAL account so it appears in GET /v3/accounts with type EXTERNAL for that connector. [CRAWL-CONFIRMED 2026-06-24: EXTERNAL accounts surface for the connector with reference 'dummypay-<bankAccountUUID>' and type EXTERNAL. Account row fields: id, connectorID, connector{id,reference,name,createdAt,provider}, provider, reference, createdAt, type (INTERNAL|EXTERNAL), name, defaultAsset, metadata, raw.]",
+       "kind": "distinct",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "docs",
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/QA_PLAYBOOK.MD",
+          "lines": "32-32"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/account-polling/AP-S2-external-account.spec.ts",
+       "featureFile": "e2e/scenarios/account-polling/AP-S2-external-account.feature"
+      },
+      {
+       "id": "AP-S3",
+       "statement": "Account polling is stateful \u2014 repeated polling does not refetch and duplicate already-known accounts; the accounts list shows each account once per connector. [Per QA_PLAYBOOK 'Polling is stateful so we don't fetch all accounts at every polling'. Hard to observe deterministically in a short test window \u2014 kept as a spec note, not authored as a Tier-2 test.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "docs"
+        ],
+        "cites": [
+         {
+          "file": "payments/QA_PLAYBOOK.MD",
+          "lines": "29-29"
+         }
+        ],
+        "confidence": "inferred"
+       }
+      },
+      {
+       "id": "AP-S4",
+       "statement": "When an account is fetched by a malformed account id (GET /v3/accounts/{bad-id}), the system shall reject it with 400 INVALID_ID. [CRAWL-CONFIRMED 2026-06-24: GET /v3/accounts/not-a-valid-account-id \u2192 400 {errorCode:INVALID_ID}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_accounts_get.go",
+          "lines": "18-23"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/account-polling/AP-account-get-guards.spec.ts",
+       "featureFile": "e2e/scenarios/account-polling/AP-account-get-guards.feature"
+      },
+      {
+       "id": "AP-S5",
+       "statement": "When an account is fetched by a well-formed but non-existent account id, the system shall reject it with 404 NOT_FOUND. [CRAWL-CONFIRMED 2026-06-24: GET /v3/accounts/<well-formed non-existent id> \u2192 404 {errorCode:NOT_FOUND, errorMessage:'cannot get account: not found'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_accounts_get.go",
+          "lines": "25-30"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/account-polling/AP-account-get-guards.spec.ts",
+       "featureFile": "e2e/scenarios/account-polling/AP-account-get-guards.feature"
+      }
+     ],
+     "testFile": "e2e/flows/account-polling.spec.ts",
+     "featureFile": "e2e/flows/account-polling.feature"
+    }
+   ]
+  },
+  {
+   "id": "balance-polling",
+   "name": "Balance Polling",
+   "provenance": {
+    "signals": [
+     "docs",
+     "code"
+    ],
+    "cites": [
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "34-34"
+     },
+     {
+      "file": "payments/internal/api/v3/handler_accounts_balances.go",
+      "lines": "18-50"
+     },
+     {
+      "file": "payments/QA_PLAYBOOK.MD",
+      "lines": "30-30"
+     }
+    ],
+    "confidence": "documented"
+   },
+   "flows": [
+    {
+     "id": "balance-polling-flow",
+     "title": "Worker polls the connector's account balances",
+     "story": "As an Ops Engineer, I install a connector so that the worker fetches each internal account's balance from the PSP and it becomes visible on the account's balances.",
+     "persona": "Ops Engineer",
+     "steps": [
+      "Install a dummypay connector and let the worker poll its internal accounts.",
+      "The worker fetches each internal account's balance from the PSP fixtures.",
+      "GET /v3/accounts/{accountID}/balances for a polled account and see its balance with the seeded asset and amount (acct-001 \u2192 USD/2 1500000; acct-002 \u2192 EUR/2 2750000)."
+     ],
+     "provenance": {
+      "signals": [
+       "docs",
+       "code"
+      ],
+      "cites": [
+       {
+        "file": "payments/QA_PLAYBOOK.MD",
+        "lines": "30-30"
+       },
+       {
+        "file": "payments/internal/api/v3/handler_accounts_balances.go",
+        "lines": "18-50"
+       }
+      ],
+      "confidence": "documented"
+     },
+     "scenarios": [
+      {
+       "id": "BP-S1",
+       "statement": "When a connector is installed and its internal accounts are polled, the worker shall fetch each internal account's balance so GET /v3/accounts/{accountID}/balances returns the seeded balance \u2014 for dummypay, heal-dummy-acct-001 \u2192 asset USD/2 amount 1500000 (minor) and heal-dummy-acct-002 \u2192 asset EUR/2 amount 2750000 (minor). [CONFIRMED across onboard-connector-basic + pool-balance-snapshot journeys + live probe 2026-06-24: balance row {accountID, asset, balance, createdAt, lastUpdatedAt, psuID}; acct-001 balance=1500000 asset=USD/2.]",
+       "kind": "happy-path",
+       "coverage": "covered-by-flow",
+       "coveredBy": "balance-polling-flow",
+       "provenance": {
+        "signals": [
+         "docs",
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/QA_PLAYBOOK.MD",
+          "lines": "30-30"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/flows/balance-polling.spec.ts",
+       "featureFile": "e2e/flows/balance-polling.feature"
+      },
+      {
+       "id": "BP-S2",
+       "statement": "When balances are requested for a malformed account id (GET /v3/accounts/{bad-id}/balances), the system shall reject it with 400 and not return balances. [CRAWL-CONFIRMED 2026-06-24: GET /v3/accounts/not-a-valid-id/balances \u2192 400 {errorCode:VALIDATION, errorMessage:'invalid character ... looking for beginning of value' (base64-decode failure of the account id)}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_accounts_balances.go",
+          "lines": "18-50"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/balance-polling/BP-S2-invalid-id.spec.ts",
+       "featureFile": "e2e/scenarios/balance-polling/BP-S2-invalid-id.feature"
+      },
+      {
+       "id": "BP-S3",
+       "statement": "When balances are requested for a well-formed but non-existent account id, the system shall return 200 with an empty balances cursor (the endpoint is a list, not a single-resource get, so an unknown account yields no rows rather than a 404). [CRAWL-CONFIRMED 2026-06-24: GET /v3/accounts/<well-formed non-existent id>/balances \u2192 200 {cursor:{pageSize:15, hasMore:false, data:[]}}.]",
+       "kind": "branch",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_accounts_balances.go",
+          "lines": "42-50"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/balance-polling/BP-balance-guards.spec.ts",
+       "featureFile": "e2e/scenarios/balance-polling/BP-balance-guards.feature"
+      },
+      {
+       "id": "BP-S4",
+       "statement": "When balances are requested with an invalid pageSize query param, the system shall reject it with 400 VALIDATION. [CRAWL-CONFIRMED 2026-06-24: GET /v3/accounts/{id}/balances?pageSize=notanumber \u2192 400 {errorCode:VALIDATION, errorMessage:\"invalid 'pageSize' query param\"}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_accounts_balances.go",
+          "lines": "29-40"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/balance-polling/BP-balance-guards.spec.ts",
+       "featureFile": "e2e/scenarios/balance-polling/BP-balance-guards.feature"
+      }
+     ],
+     "testFile": "e2e/flows/balance-polling.spec.ts",
+     "featureFile": "e2e/flows/balance-polling.feature"
+    }
+   ]
+  },
+  {
+   "id": "payment-polling",
+   "name": "Payment Polling",
+   "provenance": {
+    "signals": [
+     "docs",
+     "code"
+    ],
+    "cites": [
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "51-53"
+     },
+     {
+      "file": "payments/internal/api/v3/handler_payments_list.go",
+      "lines": "14-40"
+     },
+     {
+      "file": "payments/QA_PLAYBOOK.MD",
+      "lines": "31-31"
+     }
+    ],
+    "confidence": "documented"
+   },
+   "flows": [
+    {
+     "id": "payment-polling-flow",
+     "title": "Worker polls the connector's payments",
+     "story": "As an Ops Engineer, I install a connector so that the worker fetches the connector's payments from the PSP and they become visible in the payments list.",
+     "persona": "Ops Engineer",
+     "steps": [
+      "Install a connector whose PSP has payments to fetch.",
+      "The worker runs the fetch_payments task on install and ingests the PSP's payments.",
+      "GET /v3/payments and see each fetched payment as a row with fields id, connectorID, provider, reference, createdAt, type, status, scheme, asset, amount, initialAmount, sourceAccountID, destinationAccountID, adjustments, metadata."
+     ],
+     "provenance": {
+      "signals": [
+       "docs",
+       "code"
+      ],
+      "cites": [
+       {
+        "file": "payments/QA_PLAYBOOK.MD",
+        "lines": "31-31"
+       },
+       {
+        "file": "payments/internal/api/v3/handler_payments_list.go",
+        "lines": "14-40"
+       }
+      ],
+      "confidence": "documented"
+     },
+     "scenarios": [
+      {
+       "id": "PP-S1",
+       "statement": "When a connector whose PSP has payments is installed, the worker shall fetch those payments on install (fetch_payments task) so they appear in GET /v3/payments. [SETUP-GAP SG02: the sandbox's only connector is dummypay, whose plugin facade FetchNextPayments (plugin.go:70) hard-codes an empty payments list and never calls client.FetchPayments (which would read payments.json). So with dummypay the worker ingests NO payments and this happy path cannot be demonstrated additively. The only payment in the system, HEAL-SEED-PAYMENT-0001, is direct-DB-seeded (golden core), not polled. Resolving this needs a higher-fidelity PSP substitution that actually emits payments \u2014 a human fidelity-rung decision. Left unverified pending that.]",
+       "kind": "happy-path",
+       "coverage": "covered-by-flow",
+       "coveredBy": "payment-polling-flow",
+       "provenance": {
+        "signals": [
+         "docs",
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/connectors/plugins/public/dummypay/plugin.go",
+          "lines": "70-76"
+         },
+         {
+          "file": "payments/internal/connectors/plugins/public/dummypay/client/payments.go",
+          "lines": "22-22"
+         }
+        ],
+        "confidence": "inferred"
+       }
+      },
+      {
+       "id": "PP-S2",
+       "statement": "The payments list is queryable: GET /v3/payments returns recorded payments as rows with fields id, connectorID, provider, reference, createdAt, type, status, scheme, asset, amount, initialAmount, sourceAccountID, destinationAccountID, adjustments, metadata. [CRAWL-CONFIRMED 2026-06-24: GET /v3/payments \u2192 200; the seeded HEAL-SEED-PAYMENT-0001 row present with type PAY-IN, status SUCCEEDED, asset USD/2. This proves the list/query surface independent of polling ingestion (which is blocked by SG02).]",
+       "kind": "distinct",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payments_list.go",
+          "lines": "14-40"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-polling/PP-S2-payments-list.spec.ts",
+       "featureFile": "e2e/scenarios/payment-polling/PP-S2-payments-list.feature"
+      },
+      {
+       "id": "PP-S3",
+       "statement": "When a payment is fetched by a malformed payment id (GET /v3/payments/{bad-id}), the system shall reject it with 400 INVALID_ID. [CRAWL-CONFIRMED 2026-06-24: GET /v3/payments/not-a-valid-payment-id \u2192 400 {errorCode:INVALID_ID}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payments_get.go",
+          "lines": "18-22"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-polling/PP-payment-guards.spec.ts",
+       "featureFile": "e2e/scenarios/payment-polling/PP-payment-guards.feature"
+      },
+      {
+       "id": "PP-S4",
+       "statement": "When a payment is fetched by a well-formed but non-existent payment id, the system shall reject it with 404 NOT_FOUND. [CRAWL-CONFIRMED 2026-06-24: GET /v3/payments/<well-formed non-existent id> \u2192 404 {errorCode:NOT_FOUND, errorMessage:'cannot get payment: not found'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payments_get.go",
+          "lines": "24-28"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-polling/PP-payment-guards.spec.ts",
+       "featureFile": "e2e/scenarios/payment-polling/PP-payment-guards.feature"
+      },
+      {
+       "id": "PP-S5",
+       "statement": "The payments list is filterable by status: GET /v3/payments?query={\"$match\":{\"status\":<S>}} returns only payments whose status is S. [CRAWL-CONFIRMED 2026-06-24: query status=SUCCEEDED \u2192 rows all SUCCEEDED (incl. the seeded HEAL-SEED-PAYMENT-0001); status=FAILED \u2192 0 rows.]",
+       "kind": "branch",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payments_list.go",
+          "lines": "1-40"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-polling/PP-payment-guards.spec.ts",
+       "featureFile": "e2e/scenarios/payment-polling/PP-payment-guards.feature"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "pool-management",
+   "name": "Pool Management",
+   "provenance": {
+    "signals": [
+     "docs",
+     "code"
+    ],
+    "cites": [
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "62-75"
+     },
+     {
+      "file": "payments/internal/api/v3/handler_pools_create.go",
+      "lines": "24-75"
+     }
+    ],
+    "confidence": "documented"
+   },
+   "flows": [
+    {
+     "id": "pool-management-flow",
+     "title": "Create a pool grouping accounts and read its aggregate balances",
+     "story": "As an Ops Engineer, I group several accounts into a pool so that I can see their aggregate balances per asset.",
+     "persona": "Ops Engineer",
+     "steps": [
+      "Install a connector and let its two internal accounts be polled.",
+      "POST /v3/pools {name, accountIDs:[acct-001, acct-002]} to create a static pool; receive {data:<poolID>}.",
+      "GET /v3/pools and see the new pool listed.",
+      "GET /v3/pools/{poolID}/balances/latest and see the per-asset aggregate {data:[{asset, amount, relatedAccounts[]}]} \u2014 USD/2 1500000 and EUR/2 2750000."
+     ],
+     "provenance": {
+      "signals": [
+       "docs",
+       "code"
+      ],
+      "cites": [
+       {
+        "file": "payments/internal/api/v3/handler_pools_create.go",
+        "lines": "24-75"
+       },
+       {
+        "file": "payments/internal/api/v3/handler_pools_balances_latest.go",
+        "lines": "1-40"
+       }
+      ],
+      "confidence": "documented"
+     },
+     "scenarios": [
+      {
+       "id": "PM-S1",
+       "statement": "When the Ops Engineer creates a static pool grouping two internal accounts (POST /v3/pools {name, accountIDs}), the system shall create it and return {data:<poolID>}, the pool shall appear in GET /v3/pools, and GET /v3/pools/{poolID}/balances/latest shall return the per-asset aggregate of the members. [CRAWL-CONFIRMED 2026-06-24: create \u2192 {data:<uuid>}; balances/latest \u2192 {data:[{asset:'EUR/2',amount:2750000,relatedAccounts[]},{asset:'USD/2',amount:1500000,...}]}.]",
+       "kind": "happy-path",
+       "coverage": "covered-by-flow",
+       "coveredBy": "pool-management-flow",
+       "provenance": {
+        "signals": [
+         "docs",
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_pools_balances_latest.go",
+          "lines": "1-40"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/flows/pool-management.spec.ts",
+       "featureFile": "e2e/flows/pool-management.feature"
+      },
+      {
+       "id": "PM-S2",
+       "statement": "When a pool is created without a name (POST /v3/pools without name), the system shall reject it with 400 VALIDATION (name is required). [CRAWL-CONFIRMED 2026-06-24: \u2192 400 {errorCode:VALIDATION, errorMessage:'Name is a required field'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_pools_create.go",
+          "lines": "18-19"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/pool-management/PM-edges.spec.ts",
+       "featureFile": "e2e/scenarios/pool-management/PM-edges.feature"
+      },
+      {
+       "id": "PM-S3",
+       "statement": "When the Ops Engineer deletes a pool (DELETE /v3/pools/{poolID}), the system shall remove it (204) and it shall no longer appear in GET /v3/pools. [CRAWL-CONFIRMED 2026-06-24: DELETE \u2192 204; pool absent from the list afterwards.]",
+       "kind": "distinct",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/router.go",
+          "lines": "69-69"
+         },
+         {
+          "file": "payments/internal/api/v3/handler_pools_delete.go",
+          "lines": "1-40"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/pool-management/PM-edges.spec.ts",
+       "featureFile": "e2e/scenarios/pool-management/PM-edges.feature"
+      },
+      {
+       "id": "PM-S4",
+       "statement": "When a static pool is created with a malformed accountID in accountIDs (fails the dive,accountID validator), the system shall reject it with 400 VALIDATION. [CRAWL-CONFIRMED 2026-06-24: POST /v3/pools {name, accountIDs:['not-a-valid-account-id']} \u2192 400 {errorCode:VALIDATION, errorMessage:'AccountIDs[0] is invalid'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_pools_create.go",
+          "lines": "21-21"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/pool-management/PM-edges-2.spec.ts",
+       "featureFile": "e2e/scenarios/pool-management/PM-edges-2.feature"
+      },
+      {
+       "id": "PM-S5",
+       "statement": "When a pool is fetched by a well-formed but non-existent pool id (GET /v3/pools/{id}), the system shall reject it with 404 NOT_FOUND. [CRAWL-CONFIRMED 2026-06-24: GET /v3/pools/deadbeef-0000-4000-8000-000000000000 \u2192 404 {errorCode:NOT_FOUND, errorMessage:'cannot get pool: not found'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_pools_get.go",
+          "lines": "1-40"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/pool-management/PM-edges-2.spec.ts",
+       "featureFile": "e2e/scenarios/pool-management/PM-edges-2.feature"
+      },
+      {
+       "id": "PM-S6",
+       "statement": "When latest balances are requested for a well-formed but non-existent pool id (GET /v3/pools/{id}/balances/latest), the system shall reject it with 404 NOT_FOUND. [CRAWL-CONFIRMED 2026-06-24: GET /v3/pools/deadbeef-0000-4000-8000-000000000000/balances/latest \u2192 404 {errorCode:NOT_FOUND, errorMessage:'cannot get pool: not found'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_pools_balances_latest.go",
+          "lines": "1-40"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/pool-management/PM-edges-2.spec.ts",
+       "featureFile": "e2e/scenarios/pool-management/PM-edges-2.feature"
+      },
+      {
+       "id": "PM-S7",
+       "statement": "When a pool is fetched by a malformed (non-UUID) pool id, the system shall reject it with 400 INVALID_ID. [CRAWL-CONFIRMED 2026-06-24: GET /v3/pools/not-a-uuid \u2192 400 {errorCode:INVALID_ID, errorMessage:'invalid UUID length: 10'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_pools_get.go",
+          "lines": "15-25"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/pool-management/PM-edges-2.spec.ts",
+       "featureFile": "e2e/scenarios/pool-management/PM-edges-2.feature"
+      }
+     ],
+     "testFile": "e2e/flows/pool-management.spec.ts",
+     "featureFile": "e2e/flows/pool-management.feature"
+    }
+   ]
+  },
+  {
+   "id": "webhook-events",
+   "name": "Webhook Events",
+   "provenance": {
+    "signals": [
+     "docs",
+     "code"
+    ],
+    "cites": [
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "19-19"
+     },
+     {
+      "file": "payments/internal/api/v3/handler_connectors_webhooks.go",
+      "lines": "14-62"
+     },
+     {
+      "file": "payments/QA_PLAYBOOK.MD",
+      "lines": "39-39"
+     }
+    ],
+    "confidence": "documented"
+   },
+   "flows": [
+    {
+     "id": "webhook-events-flow",
+     "title": "Ingest an inbound PSP webhook",
+     "story": "As an Ops Engineer, I rely on the PSP posting webhook events to the connector's webhook endpoint so that state changes (e.g. a payout status change) are ingested and recorded.",
+     "persona": "Ops Engineer",
+     "steps": [
+      "The PSP POSTs an event to the public route /v3/connectors/webhooks/{connectorID}/<path>.",
+      "The handler validates the connectorID, captures body/headers/query/basic-auth, and dispatches to the connector's webhook translation.",
+      "The event is ingested and the corresponding state change (e.g. a payment adjustment) is recorded."
+     ],
+     "provenance": {
+      "signals": [
+       "docs",
+       "code"
+      ],
+      "cites": [
+       {
+        "file": "payments/internal/api/v3/handler_connectors_webhooks.go",
+        "lines": "14-62"
+       },
+       {
+        "file": "payments/QA_PLAYBOOK.MD",
+        "lines": "39-39"
+       }
+      ],
+      "confidence": "documented"
+     },
+     "scenarios": [
+      {
+       "id": "WE-S1",
+       "statement": "When the PSP posts a valid webhook event to /v3/connectors/webhooks/{connectorID}/<path>, the system shall ingest it and record the corresponding state change. [SETUP-GAP SG03: the sandbox's only connector is dummypay, which registers NO webhook support (no TranslateWebhook / webhook config) \u2014 so there is no real PSP to post a translatable webhook, and the happy path cannot be demonstrated additively. Resolving it needs a webhook-capable PSP substitution \u2014 a human fidelity-rung decision. Left unverified pending that. NB: posting to the endpoint with a valid dummypay connector currently 500s (see WE-S3).]",
+       "kind": "happy-path",
+       "coverage": "covered-by-flow",
+       "coveredBy": "webhook-events-flow",
+       "provenance": {
+        "signals": [
+         "docs",
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_connectors_webhooks.go",
+          "lines": "53-58"
+         }
+        ],
+        "confidence": "inferred"
+       }
+      },
+      {
+       "id": "WE-S2",
+       "statement": "When a webhook is posted to a malformed connector id (/v3/connectors/webhooks/not-a-valid-id/...), the system shall reject it with 400 INVALID_ID. [CRAWL-CONFIRMED 2026-06-24: \u2192 400 {errorCode:INVALID_ID, errorMessage:'invalid character ... looking for beginning of value'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_connectors_webhooks.go",
+          "lines": "20-25"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/webhook-events/WE-edges.spec.ts",
+       "featureFile": "e2e/scenarios/webhook-events/WE-edges.feature"
+      },
+      {
+       "id": "WE-S3",
+       "statement": "When a webhook is posted to a well-formed connector that has no webhook configuration registered (e.g. dummypay), the system currently returns 500 INTERNAL rather than a typed 4xx. [CRAWL-DIVERGENCE 2026-06-24: POST /v3/connectors/webhooks/<valid dummypay connectorID>/test-event \u2192 500 {errorCode:INTERNAL}. Candidate bug \u2014 a webhook for a connector with no registered handler should arguably be a typed 4xx (e.g. NOT_FOUND/NOT_IMPLEMENTED), not a raw 500. Adjudicate at verify (bug-gap vs spec). Same family as the install-time 500s already filed.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_connectors_webhooks.go",
+          "lines": "53-58"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/webhook-events/WE-edges.spec.ts",
+       "featureFile": "e2e/scenarios/webhook-events/WE-edges.feature"
+      },
+      {
+       "id": "WE-S4",
+       "statement": "When a webhook is posted to a well-formed but NON-EXISTENT connector id, the system shall reject it with 404 NOT_FOUND. [CRAWL-CONFIRMED 2026-06-24: POST /v3/connectors/webhooks/<well-formed non-existent connector id>/test-event \u2192 404 {errorCode:NOT_FOUND, errorMessage:'not found'}. Distinct from WE-S3: an EXISTING connector with no webhook config 500s, whereas a NON-EXISTENT connector resolves to a clean 404.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_connectors_webhooks.go",
+          "lines": "54-60"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/webhook-events/WE-S4-nonexistent-connector.spec.ts",
+       "featureFile": "e2e/scenarios/webhook-events/WE-S4-nonexistent-connector.feature"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "payment-service-user-connections",
+   "name": "Payment Service User Connections",
+   "provenance": {
+    "signals": [
+     "docs",
+     "code"
+    ],
+    "cites": [
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "146-175"
+     },
+     {
+      "file": "payments/internal/api/v3/handler_payment_service_users_create.go",
+      "lines": "33-70"
+     }
+    ],
+    "confidence": "documented"
+   },
+   "flows": [
+    {
+     "id": "payment-service-user-manage-flow",
+     "title": "Create and manage a payment service user",
+     "story": "As an Ops Engineer, I register a payment service user (PSU) so that I can later connect it to providers and manage its bank accounts.",
+     "persona": "Ops Engineer",
+     "steps": [
+      "POST /v3/payment-service-users {name, contactDetails?, address?} to create a PSU; receive {data:<psuID>}.",
+      "GET /v3/payment-service-users and see the PSU listed.",
+      "GET /v3/payment-service-users/{psuID} and see its fields {id, name, contactDetails, address, bankAccountIDs, metadata, createdAt}."
+     ],
+     "provenance": {
+      "signals": [
+       "docs",
+       "code"
+      ],
+      "cites": [
+       {
+        "file": "payments/internal/api/v3/handler_payment_service_users_create.go",
+        "lines": "33-70"
+       }
+      ],
+      "confidence": "documented"
+     },
+     "scenarios": [
+      {
+       "id": "PSU-S1",
+       "statement": "When the Ops Engineer creates a payment service user (POST /v3/payment-service-users {name}), the system shall create it and return {data:<psuID>}, the PSU shall appear in GET /v3/payment-service-users, and GET /v3/payment-service-users/{psuID} shall return its fields. [CRAWL-CONFIRMED 2026-06-24: create \u2192 {data:<uuid>}; get \u2192 {id, name, contactDetails, address, bankAccountIDs, metadata, createdAt}; PSU present in the list.]",
+       "kind": "happy-path",
+       "coverage": "covered-by-flow",
+       "coveredBy": "payment-service-user-manage-flow",
+       "provenance": {
+        "signals": [
+         "docs",
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_service_users_create.go",
+          "lines": "60-70"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/flows/payment-service-user-manage.spec.ts",
+       "featureFile": "e2e/flows/payment-service-user-manage.feature"
+      },
+      {
+       "id": "PSU-S2",
+       "statement": "When a PSU is created without a name (POST /v3/payment-service-users without name), the system shall reject it with 400 VALIDATION (name is required). [CRAWL-CONFIRMED 2026-06-24: \u2192 400 {errorCode:VALIDATION, errorMessage:'Name is a required field'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_service_users_create.go",
+          "lines": "33-33"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-service-user-connections/PSU-edges.spec.ts",
+       "featureFile": "e2e/scenarios/payment-service-user-connections/PSU-edges.feature"
+      },
+      {
+       "id": "PSU-S3",
+       "statement": "When the Ops Engineer deletes a PSU (DELETE /v3/payment-service-users/{psuID}), the system shall accept it (202) and the PSU shall no longer appear in GET /v3/payment-service-users. [CRAWL-CONFIRMED 2026-06-24: DELETE \u2192 202; PSU absent from the list afterwards.]",
+       "kind": "distinct",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/router.go",
+          "lines": "154-154"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-service-user-connections/PSU-edges.spec.ts",
+       "featureFile": "e2e/scenarios/payment-service-user-connections/PSU-edges.feature"
+      },
+      {
+       "id": "PSU-S4",
+       "statement": "A PSU can be connected to a provider via Open Banking (POST .../connectors/{connectorID}/create-link, forward, link-attempts) so that its accounts are linked. [SETUP-GAP SG04: Open-Banking connection/linking requires an Open-Banking-capable connector (a real OB provider or its sandbox); the sandbox's only connector is dummypay, which is not an Open-Banking provider, so the link/connection arcs cannot be demonstrated additively. Resolving needs an OB-capable PSP substitution \u2014 a human fidelity-rung decision. Left unverified pending that.]",
+       "kind": "distinct",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/router.go",
+          "lines": "158-169"
+         }
+        ],
+        "confidence": "inferred"
+       }
+      },
+      {
+       "id": "PSU-S5",
+       "statement": "When a PSU is created with an invalid contact email (fails the email validator), the system shall reject it with 400 VALIDATION. [CRAWL-CONFIRMED 2026-06-24: POST /v3/payment-service-users {name, contactDetails:{email:'not-an-email'}} \u2192 400 {errorCode:VALIDATION, errorMessage:'Email is invalid'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_service_users_create.go",
+          "lines": "19-19"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-service-user-connections/PSU-edges-2.spec.ts",
+       "featureFile": "e2e/scenarios/payment-service-user-connections/PSU-edges-2.feature"
+      },
+      {
+       "id": "PSU-S6",
+       "statement": "When a PSU is created with a malformed bankAccountID (fails the dive,uuid validator), the system shall reject it with 400 VALIDATION. [CRAWL-CONFIRMED 2026-06-24: POST {name, bankAccountIDs:['not-a-uuid']} \u2192 400 {errorCode:VALIDATION, errorMessage:'BankAccountIDs[0] must be a valid UUID'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_service_users_create.go",
+          "lines": "38-38"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-service-user-connections/PSU-edges-2.spec.ts",
+       "featureFile": "e2e/scenarios/payment-service-user-connections/PSU-edges-2.feature"
+      },
+      {
+       "id": "PSU-S7",
+       "statement": "When a PSU is fetched by a well-formed but non-existent id (GET /v3/payment-service-users/{id}), the system shall reject it with 404 NOT_FOUND. [CRAWL-CONFIRMED 2026-06-24: GET /v3/payment-service-users/deadbeef-0000-4000-8000-000000000000 \u2192 404 {errorCode:NOT_FOUND, errorMessage:'cannot get payment service user: not found'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_service_users_get.go",
+          "lines": "1-40"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-service-user-connections/PSU-edges-2.spec.ts",
+       "featureFile": "e2e/scenarios/payment-service-user-connections/PSU-edges-2.feature"
+      },
+      {
+       "id": "PSU-S8",
+       "statement": "When a non-existent PSU is deleted (DELETE /v3/payment-service-users/{id} for a well-formed but unknown id), the system shall reject it with 404 NOT_FOUND. [CRAWL-CONFIRMED 2026-06-24: DELETE /v3/payment-service-users/deadbeef-0000-4000-8000-000000000000 \u2192 404 {errorCode:NOT_FOUND, errorMessage:'cannot get payment service user: not found'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_payment_service_users_delete.go",
+          "lines": "1-40"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/payment-service-user-connections/PSU-edges-2.spec.ts",
+       "featureFile": "e2e/scenarios/payment-service-user-connections/PSU-edges-2.feature"
+      }
+     ],
+     "testFile": "e2e/flows/payment-service-user-manage.spec.ts",
+     "featureFile": "e2e/flows/payment-service-user-manage.feature"
+    }
+   ]
+  },
+  {
+   "id": "bank-account-forward",
+   "name": "Forward Bank Account",
+   "provenance": {
+    "signals": [
+     "docs",
+     "code"
+    ],
+    "cites": [
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "46-46"
+     },
+     {
+      "file": "payments/internal/api/v3/handler_bank_accounts_forward_to_connector.go",
+      "lines": "23-65"
+     },
+     {
+      "file": "payments/QA_PLAYBOOK.MD",
+      "lines": "10-10"
+     }
+    ],
+    "confidence": "documented"
+   },
+   "flows": [
+    {
+     "id": "bank-account-forward-flow",
+     "title": "Forward a bank account to a connector",
+     "story": "As an Ops Engineer, I forward a registered bank account to a connector so that it becomes a usable external account on the PSP for payouts.",
+     "persona": "Ops Engineer",
+     "provenance": {
+      "signals": [
+       "docs",
+       "code"
+      ],
+      "cites": [
+       {
+        "file": "payments/internal/api/v3/handler_bank_accounts_forward_to_connector.go",
+        "lines": "23-65"
+       },
+       {
+        "file": "payments/QA_PLAYBOOK.MD",
+        "lines": "10-10"
+       }
+      ],
+      "confidence": "documented"
+     },
+     "scenarios": [
+      {
+       "id": "BF-S1",
+       "statement": "When the Ops Engineer forwards an existing bank account to an installed connector (POST /v3/bank-accounts/{id}/forward {connectorID}), the system shall accept the request (202) and return {data:{taskID}}, and after the async task completes an account with type EXTERNAL for that connector becomes available (GET /v3/accounts). [CRAWL-CONFIRMED: 202 \u2192 {data:{taskID:<base64>}}; EXTERNAL account appears within a couple seconds.]",
+       "kind": "happy-path",
+       "coverage": "covered-by-flow",
+       "coveredBy": "bank-account-forward-flow",
+       "provenance": {
+        "signals": [
+         "docs",
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_bank_accounts_forward_to_connector.go",
+          "lines": "54-64"
+         }
+        ],
+        "confidence": "documented"
+       }
+      },
+      {
+       "id": "BF-S2",
+       "statement": "When the forward is requested with a malformed bank account id (not a UUID), the system shall reject it with 400 Bad Request (ErrInvalidID). [CRAWL-CONFIRMED: 400 {errorCode:INVALID_ID, 'invalid UUID length'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_bank_accounts_forward_to_connector.go",
+          "lines": "29-34"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/bank-account-forward/BF-validation-guards.spec.ts",
+       "featureFile": "e2e/scenarios/bank-account-forward/BF-validation-guards.feature"
+      },
+      {
+       "id": "BF-S3",
+       "statement": "When the forward is requested without a connectorID in the body, the system shall reject it with 400 VALIDATION (connectorID is required). [CRAWL-CONFIRMED: 400 {errorCode:VALIDATION, 'ConnectorID is a required field'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_bank_accounts_forward_to_connector.go",
+          "lines": "16-16"
+         },
+         {
+          "file": "payments/internal/api/v3/handler_bank_accounts_forward_to_connector.go",
+          "lines": "46-51"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/bank-account-forward/BF-validation-guards.spec.ts",
+       "featureFile": "e2e/scenarios/bank-account-forward/BF-validation-guards.feature"
+      },
+      {
+       "id": "BF-S4",
+       "statement": "When the forward references a well-formed but non-existent connectorID, the system shall reject it with 404 NOT_FOUND (connector not found); when the connectorID is malformed it shall reject with 400 VALIDATION. [CRAWL-CONFIRMED: nonexistent \u2192 404 {errorCode:NOT_FOUND,'connector not found'}; malformed \u2192 400 {errorCode:VALIDATION,'ConnectorID is invalid'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_bank_accounts_forward_to_connector.go",
+          "lines": "53-60"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/bank-account-forward/BF-validation-guards.spec.ts",
+       "featureFile": "e2e/scenarios/bank-account-forward/BF-validation-guards.feature"
+      },
+      {
+       "id": "BF-S5",
+       "statement": "When the forward targets a well-formed but non-existent bank account id (valid UUID, no such bank account), the system shall reject it with 404 NOT_FOUND and start no forward. [CRAWL-CONFIRMED 2026-06-24: POST /v3/bank-accounts/deadbeef-0000-4000-8000-000000000000/forward {connectorID:<valid>} \u2192 404 {errorCode:NOT_FOUND, errorMessage:'failed to get bank account: not found'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_bank_accounts_forward_to_connector.go",
+          "lines": "53-58"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/bank-account-forward/BF-S5-nonexistent-account.spec.ts",
+       "featureFile": "e2e/scenarios/bank-account-forward/BF-S5-nonexistent-account.feature"
+      }
+     ],
+     "testFile": "e2e/flows/bank-account-forward.spec.ts",
+     "featureFile": "e2e/flows/bank-account-forward.feature"
+    }
+   ]
+  },
+  {
+   "id": "bank-account-create",
+   "name": "Create Bank Account",
+   "provenance": {
+    "signals": [
+     "docs",
+     "code"
+    ],
+    "cites": [
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "40-40"
+     },
+     {
+      "file": "payments/internal/api/v3/handler_bank_accounts_create.go",
+      "lines": "29-70"
+     },
+     {
+      "file": "payments/QA_PLAYBOOK.MD",
+      "lines": "9-9"
+     }
+    ],
+    "confidence": "documented"
+   },
+   "flows": [
+    {
+     "id": "bank-account-create-flow",
+     "title": "Create a bank account",
+     "story": "As an Ops Engineer, I register an external bank account so that I can later forward it to a connector and pay out to it.",
+     "persona": "Ops Engineer",
+     "testFile": "e2e/flows/bank-account-create.spec.ts",
+     "featureFile": "e2e/flows/bank-account-create.feature",
+     "provenance": {
+      "signals": [
+       "docs",
+       "code"
+      ],
+      "cites": [
+       {
+        "file": "payments/internal/api/v3/handler_bank_accounts_create.go",
+        "lines": "29-70"
+       },
+       {
+        "file": "payments/QA_PLAYBOOK.MD",
+        "lines": "9-9"
+       }
+      ],
+      "confidence": "documented"
+     },
+     "scenarios": [
+      {
+       "id": "BC-S1",
+       "statement": "When the Ops Engineer creates a bank account with a name and an IBAN (POST /v3/bank-accounts), the system shall create it (201) and return its id in {data}, and it shall appear in GET /v3/bank-accounts with fields id, createdAt, name, country, metadata, relatedAccounts. [CRAWL-CONFIRMED: 201 \u2192 {data:<uuid>}; NOTE the sensitive fields iban/accountNumber/swiftBicCode read back as null in the list (encrypted at rest) \u2014 assert by id/name/country, not by echoed iban.]",
+       "kind": "happy-path",
+       "coverage": "covered-by-flow",
+       "coveredBy": "bank-account-create-flow",
+       "provenance": {
+        "signals": [
+         "docs",
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_bank_accounts_create.go",
+          "lines": "52-69"
+         }
+        ],
+        "confidence": "documented"
+       }
+      },
+      {
+       "id": "BC-S2",
+       "statement": "When the bank account is created without a name, the system shall reject it with 400 VALIDATION (name is required). [CRAWL-CONFIRMED: 400 {errorCode:VALIDATION, 'Name is a required field'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_bank_accounts_create.go",
+          "lines": "19-19"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/bank-account-create/BC-validation-guards.spec.ts",
+       "featureFile": "e2e/scenarios/bank-account-create/BC-validation-guards.feature"
+      },
+      {
+       "id": "BC-S3",
+       "statement": "When the bank account is created with neither an accountNumber nor an IBAN, the system shall reject it with 400 VALIDATION (one of accountNumber/IBAN is required). [CRAWL-CONFIRMED: 400 {errorCode:VALIDATION, 'AccountNumber is a required field'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_bank_accounts_create.go",
+          "lines": "21-22"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/bank-account-create/BC-validation-guards.spec.ts",
+       "featureFile": "e2e/scenarios/bank-account-create/BC-validation-guards.feature"
+      },
+      {
+       "id": "BC-S4",
+       "statement": "When the bank account is created with an IBAN shorter than 15 characters, the system shall reject it with 400 VALIDATION (IBAN length constraint). [CRAWL-CONFIRMED: 400 {errorCode:VALIDATION, 'IBAN must be at least 15 characters in length'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_bank_accounts_create.go",
+          "lines": "22-22"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/bank-account-create/BC-validation-guards.spec.ts",
+       "featureFile": "e2e/scenarios/bank-account-create/BC-validation-guards.feature"
+      },
+      {
+       "id": "BC-S5",
+       "statement": "When a bank account is created with an invalid ISO country code (Country fails the country_code validator), the system shall reject it with 400 VALIDATION. [CRAWL-CONFIRMED 2026-06-24: POST /v3/bank-accounts {name, iban, country:'XX'} \u2192 400 {errorCode:VALIDATION, errorMessage:\"...Country... failed on the 'country_code' tag\"}; a valid country 'DE' \u2192 201.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_bank_accounts_create.go",
+          "lines": "24-24"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/bank-account-create/BC-validation-guards-2.spec.ts",
+       "featureFile": "e2e/scenarios/bank-account-create/BC-validation-guards-2.feature"
+      },
+      {
+       "id": "BC-S6",
+       "statement": "When a bank account is created with an IBAN longer than 31 characters (fails the lte=31 validator), the system shall reject it with 400 VALIDATION. [CRAWL-CONFIRMED 2026-06-24: POST with a 40-char alphanum IBAN \u2192 400 {errorCode:VALIDATION, errorMessage:'IBAN must be at maximum 31 characters in length'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_bank_accounts_create.go",
+          "lines": "22-22"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/bank-account-create/BC-validation-guards-2.spec.ts",
+       "featureFile": "e2e/scenarios/bank-account-create/BC-validation-guards-2.feature"
+      },
+      {
+       "id": "BC-S7",
+       "statement": "When a bank account is created with a swiftBicCode shorter than 8 characters (fails the gte=8 validator), the system shall reject it with 400 VALIDATION. [CRAWL-CONFIRMED 2026-06-24: POST with swiftBicCode:'AB' \u2192 400 {errorCode:VALIDATION, errorMessage:'SwiftBicCode must be at least 8 characters in length'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_bank_accounts_create.go",
+          "lines": "23-23"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/bank-account-create/BC-validation-guards-2.spec.ts",
+       "featureFile": "e2e/scenarios/bank-account-create/BC-validation-guards-2.feature"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "connector-uninstall",
+   "name": "Uninstall Connector",
+   "provenance": {
+    "signals": [
+     "docs",
+     "code"
+    ],
+    "cites": [
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "89-89"
+     },
+     {
+      "file": "payments/internal/api/v3/handler_connectors_uninstall.go",
+      "lines": "18-42"
+     },
+     {
+      "file": "payments/QA_PLAYBOOK.MD",
+      "lines": "39-39"
+     }
+    ],
+    "confidence": "documented"
+   },
+   "flows": [
+    {
+     "id": "connector-uninstall-flow",
+     "title": "Uninstall a connector",
+     "story": "As an Ops Engineer, I uninstall a connector so that the system stops polling the PSP and the connector is removed.",
+     "persona": "Ops Engineer",
+     "testFile": "e2e/flows/connector-uninstall.spec.ts",
+     "featureFile": "e2e/flows/connector-uninstall.feature",
+     "provenance": {
+      "signals": [
+       "docs",
+       "code"
+      ],
+      "cites": [
+       {
+        "file": "payments/internal/api/v3/handler_connectors_uninstall.go",
+        "lines": "18-42"
+       },
+       {
+        "file": "payments/QA_PLAYBOOK.MD",
+        "lines": "39-39"
+       }
+      ],
+      "confidence": "documented"
+     },
+     "scenarios": [
+      {
+       "id": "CU-S1",
+       "statement": "When the Ops Engineer uninstalls an installed connector (DELETE /v3/connectors/{connectorID}), the system shall accept the request (202) and return {data:{taskID}}, and after the async uninstall task completes (~2-4s) the connector shall no longer appear in GET /v3/connectors. [CRAWL-CONFIRMED: 202 \u2192 {data:{taskID:<base64>}}; connector present immediately after DELETE, gone within a couple seconds.]",
+       "kind": "happy-path",
+       "coverage": "covered-by-flow",
+       "coveredBy": "connector-uninstall-flow",
+       "provenance": {
+        "signals": [
+         "docs",
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_connectors_uninstall.go",
+          "lines": "31-40"
+         }
+        ],
+        "confidence": "documented"
+       }
+      },
+      {
+       "id": "CU-S2",
+       "statement": "When the uninstall is requested with a malformed/invalid connector id, the system shall reject it with 400 Bad Request and not start an uninstall. [CRAWL-CONFIRMED: DELETE /v3/connectors/not-a-valid-id \u2192 400 {errorCode:INVALID_ID}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "testFile": "e2e/scenarios/connector-uninstall/CU-S2-invalid-id.spec.ts",
+       "featureFile": "e2e/scenarios/connector-uninstall/CU-S2-invalid-id.feature",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_connectors_uninstall.go",
+          "lines": "24-29"
+         }
+        ],
+        "confidence": "documented"
+       }
+      },
+      {
+       "id": "CU-S3",
+       "statement": "When the uninstall targets a well-formed but non-existent connector id, the system should reject it with a clean 4xx (e.g. 404 Not Found) and start no uninstall. [CRAWL-DIVERGENCE/CANDIDATE-BUG 2026-06-24: DELETE /v3/connectors/<well-formed base64 id for a connector that does not exist> \u2192 500 {errorCode:INTERNAL} instead of a 4xx. The handler routes every backend error (including not-found) through common.InternalServerError. Adjudicate as a bug-gap at verify.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_connectors_uninstall.go",
+          "lines": "31-36"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/connector-uninstall/CU-S3-nonexistent.spec.ts",
+       "featureFile": "e2e/scenarios/connector-uninstall/CU-S3-nonexistent.feature"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "connector-install",
+   "name": "Install Connector",
+   "provenance": {
+    "signals": [
+     "docs",
+     "code"
+    ],
+    "cites": [
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "83-83"
+     },
+     {
+      "file": "payments/internal/api/v3/handler_connectors_install.go",
+      "lines": "16-46"
+     },
+     {
+      "file": "payments/QA_PLAYBOOK.MD",
+      "lines": "5-5"
+     }
+    ],
+    "confidence": "documented"
+   },
+   "flows": [
+    {
+     "id": "connector-install-flow",
+     "title": "Install a connector",
+     "story": "As an Ops Engineer, I install a PSP connector with its config so that the worker begins polling the PSP and its accounts/balances flow into Payments.",
+     "persona": "Ops Engineer",
+     "testFile": "e2e/flows/connector-install.spec.ts",
+     "featureFile": "e2e/flows/connector-install.feature",
+     "provenance": {
+      "signals": [
+       "docs",
+       "code"
+      ],
+      "cites": [
+       {
+        "file": "payments/internal/api/v3/handler_connectors_install.go",
+        "lines": "16-46"
+       },
+       {
+        "file": "payments/QA_PLAYBOOK.MD",
+        "lines": "5-7"
+       }
+      ],
+      "confidence": "documented"
+     },
+     "scenarios": [
+      {
+       "id": "CI-S1",
+       "statement": "When the Ops Engineer installs a connector for a known provider with a valid config (POST /v3/connectors/install/{connector}), the system shall accept the request (202) and return the new connector id in {data}, and the connector shall appear in GET /v3/connectors with fields name, provider, reference, config{directory,pollingPeriod,name}, capabilities[], scheduledForDeletion, createdAt, updatedAt. [CRAWL-CONFIRMED: 202 \u2192 {data:<base64 connectorID>}; list row capabilities include FETCH_ACCOUNTS, FETCH_BALANCES, CREATE_TRANSFER, CREATE_PAYOUT; pollingPeriod normalized to '30m0s'.]",
+       "kind": "happy-path",
+       "coverage": "covered-by-flow",
+       "coveredBy": "connector-install-flow",
+       "provenance": {
+        "signals": [
+         "docs",
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_connectors_install.go",
+          "lines": "37-44"
+         },
+         {
+          "file": "payments/QA_PLAYBOOK.MD",
+          "lines": "5-5"
+         }
+        ],
+        "confidence": "documented"
+       }
+      },
+      {
+       "id": "CI-S2",
+       "statement": "When the install config is valid JSON but fails provider config validation (e.g. missing required field 'name' or 'directory'), the system shall reject it with 400 VALIDATION and not create a connector. [CRAWL-CONFIRMED: POST {} \u2192 400 {errorCode:VALIDATION, 'Config.Name ... required'}; POST {name} \u2192 400 {errorCode:VALIDATION, 'Config.Directory ... required'}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "testFile": "e2e/scenarios/connector-install/CI-S2-config-validation.spec.ts",
+       "featureFile": "e2e/scenarios/connector-install/CI-S2-config-validation.feature",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_connectors_install.go",
+          "lines": "37-42"
+         }
+        ],
+        "confidence": "documented"
+       }
+      },
+      {
+       "id": "CI-S3",
+       "statement": "When the install request body is malformed JSON, the system currently returns 500 INTERNAL (NOT a 400). [CRAWL-DIVERGENCE: expected a 400 Bad Request for a malformed body, but POST a non-JSON body to a known provider \u2192 500 {errorCode:INTERNAL}. The handler's 400 path (handler_connectors_install.go:22-31) only catches io.ReadAll/MaxBytes errors; JSON parsing happens in the provider config unmarshal downstream and surfaces as 500. Candidate bug \u2014 adjudicate at verify (bug-gap vs spec).]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "testFile": "e2e/scenarios/connector-install/CI-S3-malformed-body.spec.ts",
+       "featureFile": "e2e/scenarios/connector-install/CI-S3-malformed-body.feature",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_connectors_install.go",
+          "lines": "21-42"
+         }
+        ],
+        "confidence": "documented"
+       }
+      },
+      {
+       "id": "CI-S4",
+       "statement": "When the install is requested for an unknown/unsupported provider (with an otherwise valid-length name), the system currently returns 500 INTERNAL (NOT a clean 4xx). [CRAWL-DIVERGENCE: expected an unknown-provider rejection as a typed 4xx, but POST /v3/connectors/install/nosuchprovider {name:...} \u2192 500 {errorCode:INTERNAL}. Candidate bug \u2014 adjudicate at verify.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "testFile": "e2e/scenarios/connector-install/CI-S4-unknown-provider.spec.ts",
+       "featureFile": "e2e/scenarios/connector-install/CI-S4-unknown-provider.feature",
+       "provenance": {
+        "signals": [
+         "code"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_connectors_install.go",
+          "lines": "35-42"
+         }
+        ],
+        "confidence": "documented"
+       }
+      },
+      {
+       "id": "CI-S5",
+       "statement": "When the install request body is the empty JSON object {} (no config fields), the system shall reject it with 400 VALIDATION because the provider config validation fails on the required Name field. [CRAWL-CONFIRMED 2026-06-24: POST /v3/connectors/install/dummypay -d '{}' \u2192 400 {errorCode:VALIDATION, errorMessage:\"invalid config: Key: 'Config.Name' Error:Field validation for 'Name' failed on the 'required' tag\"}. DIVERGENCE/CANDIDATE-BUG: a truly EMPTY body ('') or whitespace-only body returns 500 {errorCode:INTERNAL} instead of a clean 4xx \u2014 the empty-bytes JSON unmarshal is not caught as ErrMissingOrInvalidBody. Tracked separately; this scenario asserts the clean 400 on {}.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_connectors_install.go",
+          "lines": "20-39"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/connector-install/CI-S5-empty-config.spec.ts",
+       "featureFile": "e2e/scenarios/connector-install/CI-S5-empty-config.feature"
+      },
+      {
+       "id": "CI-S6",
+       "statement": "When the install request body exceeds the connector config size limit (>500000 bytes), the system shall reject it with 413 Request Entity Too Large. [CRAWL-CONFIRMED 2026-06-24: POST with a ~600KB body \u2192 413 {errorCode:MISSING_OR_INVALID_BODY, errorMessage:'http: request body too large'} \u2014 matches the http.MaxBytesReader(connectorConfigMaxBytes=500000) \u2192 MaxBytesError \u2192 WriteErrorResponse(StatusRequestEntityTooLarge, ErrMissingOrInvalidBody) path.]",
+       "kind": "guard",
+       "coverage": "distinct",
+       "provenance": {
+        "signals": [
+         "code",
+         "crawl"
+        ],
+        "cites": [
+         {
+          "file": "payments/internal/api/v3/handler_connectors_install.go",
+          "lines": "13-27"
+         }
+        ],
+        "confidence": "documented"
+       },
+       "testFile": "e2e/scenarios/connector-install/CI-S6-oversized-body.spec.ts",
+       "featureFile": "e2e/scenarios/connector-install/CI-S6-oversized-body.feature"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "journeys": [
+  {
+   "id": "onboard-connector-basic",
+   "title": "Connector Installation & Discovery",
+   "story": "As an Ops Engineer, I install a connector so that the system begins polling the PSP, and I confirm the connector's accounts and balances are discovered and visible.",
+   "persona": "Ops Engineer",
+   "entry": "Fresh stack with no connector installed (golden seed empty of connectors); Ops Engineer at the Console.",
+   "steps": [
+    {
+     "goal": "Install a dummypay connector (POST /v3/connectors/install/dummypay, config {directory:'/dummypay', pollingPeriod:'30m'}) and confirm it appears in the Console's Installed Connectors list.",
+     "feature": "connector-install",
+     "produces": [
+      "connectorID"
+     ],
+     "ui": "Console route /formance/localhost/connectivity/connectors/installed \u2014 'Installed Connectors' table; row shows name 'heal-dummypay' + provider 'dummypay'.",
+     "assert": "Connectors table row with name 'heal-dummypay' is visible."
+    },
+    {
+     "goal": "Confirm the worker polled the connector's accounts on install \u2014 the 2 fixture accounts appear in the Console accounts table.",
+     "feature": "account-polling",
+     "consumes": [
+      "connectorID"
+     ],
+     "produces": [
+      "accounts"
+     ],
+     "ui": "Console route /connectivity/accounts (global) or connector-scoped .../connectors/installed/{id}/accounts \u2014 'Accounts' table.",
+     "assert": "Accounts table contains 'heal-dummy-acct-001' (Heal Dummy Checking) and 'heal-dummy-acct-002' (Heal Dummy Savings)."
+    },
+    {
+     "goal": "Confirm the polled accounts' balances are visible in the Console account-detail Balances card, matching the seeded fixture amounts.",
+     "feature": "balance-polling",
+     "consumes": [
+      "accounts"
+     ],
+     "produces": [
+      "balances"
+     ],
+     "ui": "Console route /connectivity/accounts/{accountId}/balances \u2014 'Balances' card; columns Asset + Balance (formatted from minor units).",
+     "assert": "Balances card for heal-dummy-acct-001 shows asset USD/2 and balance 1500000 (minor) / 15,000.00 formatted."
+    }
+   ],
+   "testFile": "e2e/journeys/onboard-connector-basic.spec.ts",
+   "featureFile": "e2e/journeys/onboard-connector-basic.feature",
+   "source": "scan + QA_PLAYBOOK.MD (Install Connector, Polling Accounts, Polling Account Balances) + walk-journey grounding. NOTE: Console UI 500s on /connectivity/* (console-v3 useRouteGuard bug, setup-gap SG01 resolved at mock rung) \u2014 journey asserts via the payments API surface the Console itself calls.",
+   "provenance": {
+    "signals": [
+     "docs",
+     "code"
+    ],
+    "cites": [
+     {
+      "file": "payments/QA_PLAYBOOK.MD",
+      "lines": "5-7"
+     },
+     {
+      "file": "payments/QA_PLAYBOOK.MD",
+      "lines": "28-30"
+     },
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "51-53"
+     }
+    ],
+    "confidence": "documented"
+   }
+  },
+  {
+   "id": "execute-internal-transfer",
+   "title": "Internal Transfer Execution",
+   "story": "As a Finance User, I install a connector, view its fetched internal accounts, and initiate a transfer between two of them so that money moves and the transfer is recorded.",
+   "persona": "Ops Engineer",
+   "entry": "Fresh stack; Ops Engineer at the Console. No connector installed yet.",
+   "steps": [
+    {
+     "goal": "Install a dummypay connector (config {directory:'/dummypay', pollingPeriod:'30m'}) and confirm it appears in the installed connectors list.",
+     "feature": "connector-install",
+     "produces": [
+      "connectorID"
+     ],
+     "ui": "POST /v3/connectors/install/dummypay \u2192 GET /v3/connectors (Console: Installed Connectors).",
+     "assert": "The installed connector is listed by name."
+    },
+    {
+     "goal": "Confirm the worker polled the connector's internal accounts \u2014 the 2 fixture accounts are available to use as transfer source and destination.",
+     "feature": "account-polling",
+     "consumes": [
+      "connectorID"
+     ],
+     "produces": [
+      "sourceAccount",
+      "destinationAccount"
+     ],
+     "ui": "GET /v3/accounts (Console: Accounts).",
+     "assert": "Both heal-dummy-acct-001 and -002 are present for the connector."
+    },
+    {
+     "goal": "Initiate a TRANSFER between the two internal accounts (POST /v3/payment-initiations, type TRANSFER, source=acct-001, destination=acct-002) and confirm it is accepted and recorded as a payment initiation.",
+     "feature": "payment-initiation-create",
+     "consumes": [
+      "sourceAccount",
+      "destinationAccount",
+      "connectorID"
+     ],
+     "produces": [
+      "paymentInitiation"
+     ],
+     "ui": "POST /v3/payment-initiations \u2192 GET /v3/payment-initiations (Console: Payment Initiations).",
+     "assert": "The created payment initiation is returned with an ID and appears in the payment-initiations list with type TRANSFER."
+    }
+   ],
+   "testFile": "e2e/journeys/execute-internal-transfer.spec.ts",
+   "featureFile": "e2e/journeys/execute-internal-transfer.feature",
+   "source": "scan + QA_PLAYBOOK.MD (Creating a Transfer: POST /v3/payment-initiations) + openapi.yaml V3InitiatePaymentRequest. NOTE: assertions via the payments API surface (Console UI 500s \u2014 setup-gap SG01). Learnings: scheduledAt must be future; transfer reference must be SHORT (Temporal WorkflowId length limit); ?noValidation=true \u2192 status WAITING_FOR_VALIDATION.",
+   "provenance": {
+    "signals": [
+     "docs",
+     "code"
+    ],
+    "cites": [
+     {
+      "file": "payments/QA_PLAYBOOK.MD",
+      "lines": "18-18"
+     },
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "129-131"
+     },
+     {
+      "file": "payments/openapi.yaml",
+      "lines": "5600-5640"
+     }
+    ],
+    "confidence": "documented"
+   }
+  },
+  {
+   "id": "pool-balance-snapshot",
+   "title": "Account Pool & Balance Aggregation",
+   "story": "As a Treasury Manager, I install a connector, group its fetched accounts into a pool, and query the pool's aggregate balances so I can see total holdings per asset.",
+   "persona": "Ops Engineer",
+   "entry": "Fresh stack; Ops Engineer at the Console. No connector installed yet.",
+   "steps": [
+    {
+     "goal": "Install a dummypay connector and confirm it is listed.",
+     "feature": "connector-install",
+     "produces": [
+      "connectorID"
+     ],
+     "ui": "POST /v3/connectors/install/dummypay \u2192 GET /v3/connectors.",
+     "assert": "The connector is listed by name."
+    },
+    {
+     "goal": "Confirm the worker polled the connector's two internal accounts.",
+     "feature": "account-polling",
+     "consumes": [
+      "connectorID"
+     ],
+     "produces": [
+      "accounts"
+     ],
+     "ui": "GET /v3/accounts.",
+     "assert": "Both heal-dummy-acct-001 and -002 are present for the connector."
+    },
+    {
+     "goal": "Create a pool grouping the two accounts (POST /v3/pools {name, accountIDs}).",
+     "feature": "pool-management",
+     "consumes": [
+      "accounts"
+     ],
+     "produces": [
+      "pool"
+     ],
+     "ui": "POST /v3/pools \u2192 GET /v3/pools (Console: Cash Pools).",
+     "assert": "The pool is created with an id and appears in the pools list."
+    },
+    {
+     "goal": "Query the pool's latest aggregate balances (GET /v3/pools/{id}/balances/latest) and confirm the per-asset totals match the seeded fixture balances.",
+     "feature": "balance-polling",
+     "consumes": [
+      "pool"
+     ],
+     "produces": [
+      "aggregateBalances"
+     ],
+     "ui": "GET /v3/pools/{id}/balances/latest (Console: pool detail balances).",
+     "assert": "The aggregate shows USD/2 = 1500000 and EUR/2 = 2750000."
+    }
+   ],
+   "testFile": "e2e/journeys/pool-balance-snapshot.spec.ts",
+   "featureFile": "e2e/journeys/pool-balance-snapshot.feature",
+   "source": "scan + openapi.yaml V3CreatePoolRequest + live probe (POST /v3/pools, GET /v3/pools/{id}/balances/latest returns per-asset aggregate USD/2=1500000, EUR/2=2750000). NOTE: assertions via the payments API surface (Console UI 500s \u2014 setup-gap SG01).",
+   "provenance": {
+    "signals": [
+     "docs",
+     "code"
+    ],
+    "cites": [
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "61-71"
+     },
+     {
+      "file": "payments/openapi.yaml",
+      "lines": "6281-6298"
+     }
+    ],
+    "confidence": "documented"
+   }
+  },
+  {
+   "id": "payout-to-external-account",
+   "title": "Payout Workflow with Reversal",
+   "story": "As an Ops Engineer, I install a connector, register and forward an external bank account, initiate a PAYOUT from an internal account to that external account, then reverse the payout so the funds movement is undone and the reversal is recorded.",
+   "persona": "Ops Engineer",
+   "entry": "Fresh stack; Ops Engineer at the Console. No connector installed yet.",
+   "steps": [
+    {
+     "goal": "Install a dummypay connector (POST /v3/connectors/install/dummypay, config {directory:'/dummypay', pollingPeriod:'30m'}) and confirm it is listed.",
+     "feature": "connector-install",
+     "produces": [
+      "connectorID"
+     ],
+     "ui": "POST /v3/connectors/install/dummypay \u2192 GET /v3/connectors (Console: Installed Connectors).",
+     "assert": "The installed connector is listed by name."
+    },
+    {
+     "goal": "Confirm the worker polled the connector's internal accounts \u2014 the fixture account usable as the payout source is available.",
+     "feature": "account-polling",
+     "consumes": [
+      "connectorID"
+     ],
+     "produces": [
+      "sourceAccount"
+     ],
+     "ui": "GET /v3/accounts (Console: Accounts).",
+     "assert": "heal-dummy-acct-001 is present for the connector and usable as a payout source."
+    },
+    {
+     "goal": "Create an external bank account (POST /v3/bank-accounts {name, accountNumber/iban, country}) and confirm it is created with an id.",
+     "feature": "bank-account-create",
+     "produces": [
+      "bankAccountID"
+     ],
+     "ui": "POST /v3/bank-accounts \u2192 GET /v3/bank-accounts (Console: Bank Accounts).",
+     "assert": "The bank account is created and returned with an id, and appears in the bank-accounts list."
+    },
+    {
+     "goal": "Forward the bank account to the connector (POST /v3/bank-accounts/{id}/forward {connectorID}) so it becomes a usable external account on the PSP.",
+     "feature": "bank-account-forward",
+     "consumes": [
+      "bankAccountID",
+      "connectorID"
+     ],
+     "produces": [
+      "externalAccount"
+     ],
+     "ui": "POST /v3/bank-accounts/{id}/forward (returns 202 Accepted) \u2192 GET /v3/accounts (the forwarded bank account surfaces within ~1-2s as an account with type EXTERNAL).",
+     "assert": "The forward returns 202 and an account with type=EXTERNAL appears for the connector, usable as a payout destination. [WALK-CONFIRMED]"
+    },
+    {
+     "goal": "Initiate a PAYOUT from the internal source account to the forwarded external account (POST /v3/payment-initiations, type PAYOUT, source=sourceAccount, destination=externalAccount) and confirm it is accepted and recorded.",
+     "feature": "payment-initiation-create",
+     "consumes": [
+      "sourceAccount",
+      "externalAccount",
+      "connectorID"
+     ],
+     "produces": [
+      "paymentInitiation"
+     ],
+     "ui": "POST /v3/payment-initiations \u2192 GET /v3/payment-initiations (Console: Payment Initiations).",
+     "assert": "The payment initiation is returned with a paymentInitiationID and appears in the list with type=PAYOUT, status=SCHEDULED_FOR_PROCESSING. [WALK-CONFIRMED]"
+    },
+    {
+     "goal": "Reverse the payout (POST /v3/payment-initiations/{id}/reverse {reference, amount, asset}) and confirm the reversal is accepted and recorded as an adjustment.",
+     "feature": "payment-initiation-reverse",
+     "consumes": [
+      "paymentInitiation"
+     ],
+     "produces": [
+      "reversal"
+     ],
+     "ui": "POST /v3/payment-initiations/{id}/reverse \u2192 GET /v3/payment-initiations/{id}/adjustments (Console: payment initiation detail).",
+     "assert": "The reverse call is accepted (202) and a reversal adjustment is recorded against the payment initiation. [WALK-BLOCKED: reverse returns HTTP 500 INTERNAL \u2014 Temporal 'WorkflowId length exceeds limit' on the reverse-payout workflow id (engine.go ReversePayout builds id from reverse-payout-<stack>-<CreatedAt> + connectorID + reversal.ID, which itself re-encodes the connectorID \u2192 overflows Temporal's WorkflowId limit). PRODUCT BUG, filed as bug-gap. NOT fixable by shortening the request reference \u2014 the connector-id blob dominates the length.]"
+    }
+   ],
+   "testFile": "e2e/journeys/payout-to-external-account.spec.ts",
+   "featureFile": "e2e/journeys/payout-to-external-account.feature",
+   "source": "scan + QA_PLAYBOOK.MD (Create a Bank Account, Forward a Bank Account, Creating a Payout, Reverse a Payout) + payments/internal/api/v3/router.go (bank-accounts/forward, payment-initiations/{id}/reverse) + openapi.yaml (V3ReversePaymentInitiationRequest, PAYOUT type). NOTE: assertions via the payments API surface the Console calls (Console UI 500s \u2014 setup-gap SG01 resolved at mock rung). Reuse learnings from execute-internal-transfer: scheduledAt future, SHORT reference (Temporal WorkflowId limit), ?noValidation=true \u2192 WAITING_FOR_VALIDATION.",
+   "provenance": {
+    "signals": [
+     "docs",
+     "code"
+    ],
+    "cites": [
+     {
+      "file": "payments/QA_PLAYBOOK.MD",
+      "lines": "9-10"
+     },
+     {
+      "file": "payments/QA_PLAYBOOK.MD",
+      "lines": "19-20"
+     },
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "46-46"
+     },
+     {
+      "file": "payments/internal/api/v3/router.go",
+      "lines": "139-139"
+     },
+     {
+      "file": "payments/openapi.yaml",
+      "lines": "1878-1898"
+     }
+    ],
+    "confidence": "documented"
+   }
+  }
+ ]
+}

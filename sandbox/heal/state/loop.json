@@ -1,0 +1,670 @@
+{
+  "schemaVersion": 5,
+  "seq": 190,
+  "updatedAt": "2026-06-24T15:05:22.579Z",
+  "skill": "cover",
+  "workspace": "/Users/malo/heal/sandbox-examples/formance-payments",
+  "mode": "verify",
+  "currentPhase": "P3-crawl",
+  "selectedFeature": {
+    "id": "payment-service-user-connections",
+    "name": "Payment Service User Connections"
+  },
+  "selectedJourney": null,
+  "sandboxStatus": "skeleton-ready",
+  "features": [
+    {
+      "name": "Install Connector",
+      "status": "verified",
+      "id": "connector-install",
+      "phases": [
+        {
+          "id": 0,
+          "key": "spec",
+          "status": "done"
+        },
+        {
+          "id": 1,
+          "key": "sandbox",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "key": "crawl",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "key": "author",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "key": "test",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "key": "verdict",
+          "status": "done"
+        }
+      ],
+      "flows": 1,
+      "scenarios": 4
+    },
+    {
+      "name": "Uninstall Connector",
+      "status": "verified",
+      "id": "connector-uninstall",
+      "phases": [
+        {
+          "id": 0,
+          "key": "spec",
+          "status": "done"
+        },
+        {
+          "id": 1,
+          "key": "sandbox",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "key": "crawl",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "key": "author",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "key": "test",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "key": "verdict",
+          "status": "done"
+        }
+      ],
+      "flows": 1,
+      "scenarios": 2
+    },
+    {
+      "name": "Create Bank Account",
+      "status": "verified",
+      "id": "bank-account-create",
+      "phases": [
+        {
+          "id": 0,
+          "key": "spec",
+          "status": "done"
+        },
+        {
+          "id": 1,
+          "key": "sandbox",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "key": "crawl",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "key": "author",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "key": "test",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "key": "verdict",
+          "status": "done"
+        }
+      ],
+      "flows": 1,
+      "scenarios": 4
+    },
+    {
+      "name": "Forward Bank Account",
+      "status": "verified",
+      "id": "bank-account-forward",
+      "phases": [
+        {
+          "id": 0,
+          "key": "spec",
+          "status": "done"
+        },
+        {
+          "id": 1,
+          "key": "sandbox",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "key": "crawl",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "key": "author",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "key": "test",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "key": "verdict",
+          "status": "done"
+        }
+      ],
+      "flows": 1,
+      "scenarios": 4
+    },
+    {
+      "name": "Create Payment Initiation (Transfer/Payout)",
+      "status": "verified",
+      "id": "payment-initiation-create",
+      "phases": [
+        {
+          "id": 0,
+          "key": "spec",
+          "status": "done"
+        },
+        {
+          "id": 1,
+          "key": "sandbox",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "key": "crawl",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "key": "author",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "key": "test",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "key": "verdict",
+          "status": "done"
+        }
+      ],
+      "flows": 1,
+      "scenarios": 5
+    },
+    {
+      "name": "Reverse Payment Initiation",
+      "status": "verified",
+      "id": "payment-initiation-reverse",
+      "phases": [
+        {
+          "id": 0,
+          "key": "spec",
+          "status": "done"
+        },
+        {
+          "id": 1,
+          "key": "sandbox",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "key": "crawl",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "key": "author",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "key": "test",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "key": "verdict",
+          "status": "done"
+        }
+      ],
+      "flows": 1,
+      "scenarios": 4
+    },
+    {
+      "name": "Account Polling",
+      "status": "verified",
+      "id": "account-polling",
+      "phases": [
+        {
+          "id": 0,
+          "key": "spec",
+          "status": "done"
+        },
+        {
+          "id": 1,
+          "key": "sandbox",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "key": "crawl",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "key": "author",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "key": "test",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "key": "verdict",
+          "status": "done"
+        }
+      ],
+      "flows": 1,
+      "scenarios": 3
+    },
+    {
+      "name": "Balance Polling",
+      "status": "verified",
+      "id": "balance-polling",
+      "phases": [
+        {
+          "id": 0,
+          "key": "spec",
+          "status": "done"
+        },
+        {
+          "id": 1,
+          "key": "sandbox",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "key": "crawl",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "key": "author",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "key": "test",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "key": "verdict",
+          "status": "done"
+        }
+      ],
+      "flows": 1,
+      "scenarios": 2
+    },
+    {
+      "name": "Payment Polling",
+      "status": "verified",
+      "id": "payment-polling",
+      "phases": [
+        {
+          "id": 0,
+          "key": "spec",
+          "status": "done"
+        },
+        {
+          "id": 1,
+          "key": "sandbox",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "key": "crawl",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "key": "author",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "key": "test",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "key": "verdict",
+          "status": "done"
+        }
+      ],
+      "flows": 1,
+      "scenarios": 2
+    },
+    {
+      "name": "Webhook Events",
+      "status": "verified",
+      "id": "webhook-events",
+      "phases": [
+        {
+          "id": 0,
+          "key": "spec",
+          "status": "done"
+        },
+        {
+          "id": 1,
+          "key": "sandbox",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "key": "crawl",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "key": "author",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "key": "test",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "key": "verdict",
+          "status": "done"
+        }
+      ],
+      "flows": 1,
+      "scenarios": 3
+    },
+    {
+      "name": "Pool Management",
+      "status": "verified",
+      "id": "pool-management",
+      "phases": [
+        {
+          "id": 0,
+          "key": "spec",
+          "status": "done"
+        },
+        {
+          "id": 1,
+          "key": "sandbox",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "key": "crawl",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "key": "author",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "key": "test",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "key": "verdict",
+          "status": "done"
+        }
+      ],
+      "flows": 1,
+      "scenarios": 3
+    },
+    {
+      "name": "Payment Service User Connections",
+      "status": "verified",
+      "id": "payment-service-user-connections",
+      "phases": [
+        {
+          "id": 0,
+          "key": "spec",
+          "status": "done"
+        },
+        {
+          "id": 1,
+          "key": "sandbox",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "key": "crawl",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "key": "author",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "key": "test",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "key": "verdict",
+          "status": "done"
+        }
+      ],
+      "flows": 1,
+      "scenarios": 4
+    }
+  ],
+  "journeys": [
+    {
+      "name": "Connector Installation & Discovery",
+      "status": "verified",
+      "id": "onboard-connector-basic",
+      "deps": [
+        "connector-install",
+        "account-polling",
+        "balance-polling"
+      ],
+      "phases": [
+        {
+          "id": 0,
+          "key": "spec",
+          "status": "done"
+        },
+        {
+          "id": 1,
+          "key": "sandbox",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "key": "walk",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "key": "author",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "key": "test",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "key": "verdict",
+          "status": "done"
+        }
+      ],
+      "setupGaps": [
+        {
+          "id": "SG01-console-microstack",
+          "summary": "Console v3 UI renders '200 Unexpected Error' on every Connectivity page (connectors, accounts, balances) — its micro-stack context handler rejects the payments API's 200 responses, so no UI assertions are possible even though the data and API are correct.",
+          "status": "resolved",
+          "doc": "heal/docs/setup-gaps/SG01-console-microstack.md",
+          "screen": "/formance/localhost/connectivity/connectors/installed (and /accounts)",
+          "rung": "mock"
+        }
+      ]
+    },
+    {
+      "name": "Internal Transfer Execution",
+      "status": "verified",
+      "id": "execute-internal-transfer",
+      "deps": [
+        "connector-install",
+        "account-polling",
+        "payment-initiation-create"
+      ],
+      "phases": [
+        {
+          "id": 0,
+          "key": "spec",
+          "status": "done"
+        },
+        {
+          "id": 1,
+          "key": "sandbox",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "key": "walk",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "key": "author",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "key": "test",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "key": "verdict",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "name": "Payout Workflow with Reversal",
+      "status": "verified",
+      "id": "payout-to-external-account",
+      "deps": [
+        "connector-install",
+        "account-polling",
+        "bank-account-create",
+        "bank-account-forward",
+        "payment-initiation-create",
+        "payment-initiation-reverse"
+      ],
+      "phases": [
+        {
+          "id": 0,
+          "key": "spec",
+          "status": "done"
+        },
+        {
+          "id": 1,
+          "key": "sandbox",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "key": "walk",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "key": "author",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "key": "test",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "key": "verdict",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "name": "Account Pool & Balance Aggregation",
+      "status": "verified",
+      "id": "pool-balance-snapshot",
+      "deps": [
+        "connector-install",
+        "account-polling",
+        "pool-management",
+        "balance-polling"
+      ],
+      "phases": [
+        {
+          "id": 0,
+          "key": "spec",
+          "status": "done"
+        },
+        {
+          "id": 1,
+          "key": "sandbox",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "key": "walk",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "key": "author",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "key": "test",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "key": "verdict",
+          "status": "done"
+        }
+      ]
+    }
+  ],
+  "agentMode": "manual"
+}

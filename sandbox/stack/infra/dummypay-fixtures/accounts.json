@@ -1,0 +1,14 @@
+[
+  {
+    "id": "heal-dummy-acct-001",
+    "name": "Heal Dummy Checking",
+    "opening_date": "2026-01-01T00:00:00Z",
+    "currency": "USD/2"
+  },
+  {
+    "id": "heal-dummy-acct-002",
+    "name": "Heal Dummy Savings",
+    "opening_date": "2026-01-01T00:00:00Z",
+    "currency": "EUR/2"
+  }
+]
