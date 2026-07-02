@@ -22,7 +22,7 @@ Heal is building an opinionated QA engineer that:
 
 ➡️ [Get early access to heal](https://www.heal.dev/). Mention this repo to get fast-tracked!
 
-<img width="1512" height="949" alt="formance heal sandbox" src="https://github.com/user-attachments/assets/927428ec-25af-4ba6-bd78-50fd4f236a75" />
+<img width="1920" height="1206" alt="formance-heal" src="https://github.com/user-attachments/assets/b3f91144-bd5d-4392-a4d7-2572f3edd6ec" />
 
 
 ## Results
