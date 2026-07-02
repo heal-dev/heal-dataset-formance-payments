@@ -12,11 +12,15 @@ Tests are written in Playwright and can run independently of the heal agent. The
 1. Install dependencies `npm i`
 2. Run tests `npx playwright test`
 
-## How to add more test coverage
+## How to add more test coverage 
 
-To add more test coverage, get better bug reports, grow the sandbox for more features and add smart mocks:
+Heal is building an opinionated QA engineer that:
+- easily adds more test coverage
+- tests the corner cases you don't think about or that are hard to test
+- get bug reports with low false-positive to feed back to yourcoding agent
+- makes your system testable even when it has complicated architectures and integration points
 
-[Get early access to heal](https://www.heal.dev/). Mention this repo to get fast-tracked!
+➡️ [Get early access to heal](https://www.heal.dev/). Mention this repo to get fast-tracked!
 
 ## Results
 
