@@ -17,7 +17,7 @@ Tests are written in Playwright and can run independently of the heal agent. The
 Heal is building an opinionated QA engineer that:
 - easily adds more test coverage
 - tests the corner cases you don't think about or that are hard to test
-- get bug reports with low false-positive to feed back to yourcoding agent
+- get bug reports with a low false-positive rate to feed back to your coding agent
 - makes your system testable even when it has complicated architectures and integration points
 
 ➡️ [Get early access to heal](https://www.heal.dev/). Mention this repo to get fast-tracked!
