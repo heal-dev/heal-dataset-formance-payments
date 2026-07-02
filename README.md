@@ -22,6 +22,9 @@ Heal is building an opinionated QA engineer that:
 
 ➡️ [Get early access to heal](https://www.heal.dev/). Mention this repo to get fast-tracked!
 
+<img width="1512" height="949" alt="formance heal sandbox" src="https://github.com/user-attachments/assets/927428ec-25af-4ba6-bd78-50fd4f236a75" />
+
+
 ## Results
 
 A fast, naive pass of heal found [7 bugs](https://github.com/formancehq/payments/issues?q=is%3Aissue%20author%3Amalomarrec%20label%3Abug)
