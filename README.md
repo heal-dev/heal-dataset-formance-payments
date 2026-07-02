@@ -2,8 +2,7 @@
 
 ## Background
 
-Heal is an agent that turns your codebase into a production-like, testable sandbox. Then it tests the hell out of it, end-to-end.
-This is a sample sandbox with specs and tests generated on the open-source PSP orchestration framework [formance](https://github.com/formancehq/payments).
+This is a sample test sandbox with specs and tests generated on the open-source PSP orchestration framework [formance](https://github.com/formancehq/payments). It was created with Heal, an agent that turns your codebase into a production-like, testable sandbox, then tests the hell out of it.
 
 
 ## How to run tests
