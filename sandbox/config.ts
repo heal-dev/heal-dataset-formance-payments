@@ -1,12 +1,14 @@
 // sandbox/config.ts — the single source of ports/URLs/paths/seed constants.
 // Both zones (stack/ and e2e/) import from here; never hard-code a URL twice.
 
+// Host ports live in formance-payments' reserved 15xxx block (see
+// heal-datasets-shared/PORTS.md); remapped by stack/infra/docker-compose.heal.yml.
 export const PORTS = {
-  console: 3000, // Console v3 frontend (the entry screen)
-  gateway: 8092, // Caddy gateway → proxies /api to payments
-  api: 8080, // payments server (the SUT)
-  temporalUi: 8081,
-  db: 5432,
+  console: 15000, // Console v3 frontend (the entry screen)
+  gateway: 15092, // Caddy gateway → proxies /api to payments
+  api: 15080, // payments server (the SUT)
+  temporalUi: 15081,
+  db: 15432,
 } as const;
 
 export const CONSOLE_URL = `http://localhost:${PORTS.console}`;
