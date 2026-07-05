@@ -1,8 +1,8 @@
 // e2e/specs/skeleton.spec.ts — Stage 0 walking skeleton.
 //
 // Journey: the full chain serves one seeded Payment.
-//   Browser/HTTP → Console (:3000) is up, AND
-//   gateway (:8092) → payments API → Postgres returns the seeded payment.
+//   Browser/HTTP → Console (:15000) is up, AND
+//   gateway (:15092) → payments API → Postgres returns the seeded payment.
 //
 // This is the thinnest spec that proves the stack boots and the golden seed is
 // readable end-to-end. No auth (local stack is open). Read-only: asserts on the

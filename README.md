@@ -5,6 +5,10 @@
 This is a sample test sandbox with specs and tests generated on the open-source PSP orchestration framework [formance](https://github.com/formancehq/payments). It was created with Heal, an agent that turns your codebase into a production-like, testable sandbox, then tests the hell out of it.
 
 
+## Port allocation
+
+The sandbox publishes all host ports inside its reserved block **15000–15999** (compose project `formance-payments-sbx`), so it never collides with other Heal app sandboxes. The cross-sandbox registry of reserved blocks lives in the sibling repo `heal-datasets-shared` (`PORTS.md`). Run `sandbox/scripts/print-host-ports.sh` to list the ports this sandbox publishes.
+
 ## How to run tests
 
 Tests are written in Playwright and can run independently of the heal agent. They use the [heal-playwright-tracer](https://github.com/heal-dev/heal-playwright-tracer) to provide better, easier-to-analyze tracers. To run:

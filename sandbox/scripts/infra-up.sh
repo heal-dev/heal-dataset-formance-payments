@@ -21,7 +21,9 @@ dc() { docker compose -p "$PROJECT" -f "$PAYMENTS_DIR/docker-compose.yml" -f "$O
 
 # Load sandbox .env if present (STACK_PUBLIC_URL etc.).
 [ -f "$SANDBOX_DIR/.env" ] && set -a && . "$SANDBOX_DIR/.env" && set +a
-export STACK_PUBLIC_URL="${STACK_PUBLIC_URL:-http://localhost:8080}"
+# NB: host ports below (15xxx) must stay in sync with sandbox/config.ts
+# (remapped by the compose override into the reserved 15000–15999 block).
+export STACK_PUBLIC_URL="${STACK_PUBLIC_URL:-http://localhost:15080}"
 
 echo "[infra-up] bringing stack up (detached) ..."
 # NOTE: we do NOT use `--wait` here. The payments + payments-worker services run
@@ -34,7 +36,7 @@ dc up -d
 # --- real readiness gate: the payments API actually serving (cold-build budget) ---
 echo "[infra-up] waiting for payments API healthcheck (cold Go build can take minutes) ..."
 for i in $(seq 1 180); do
-  if curl -fsS -m 5 "http://localhost:8080/_healthcheck" >/dev/null 2>&1; then
+  if curl -fsS -m 5 "http://localhost:15080/_healthcheck" >/dev/null 2>&1; then
     echo "[infra-up] payments API healthy (after ~$((i*5))s)."; break
   fi
   [ "$i" -eq 180 ] && { echo "[infra-up] payments API never became healthy"; \
@@ -60,4 +62,4 @@ for i in $(seq 1 60); do
   sleep 2
 done
 
-echo "[infra-up] ready. Console: http://localhost:3000  Gateway: http://localhost:8092"
+echo "[infra-up] ready. Console: http://localhost:15000  Gateway: http://localhost:15092"
