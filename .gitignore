@@ -1,0 +1,6 @@
+node_modules/
+sandbox/node_modules/
+sandbox/.data/
+sandbox/test-results/
+sandbox/playwright-report/
+sandbox/blob-report/
