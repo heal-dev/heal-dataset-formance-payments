@@ -11,7 +11,7 @@
 #     prefix), so re-running collides with leftovers from a prior run. We rename
 #     them under the sandbox project so they never clash with anything else.
 #  4. Remap every published HOST port into formance-payments' reserved 15xxx
-#     block (15000–15999) so sandboxes of different apps can run side by side
+#     block (15300–15999) so sandboxes of different apps can run side by side
 #     (the base compose publishes 8080/3000/5432/... which collide). Container-
 #     internal ports are unchanged. `ports: !override` REPLACES the base list,
 #     so each block re-declares all ports we keep. Registry of reserved blocks:
@@ -30,36 +30,36 @@ services:
     volumes:
       - ${HEAL_FIXTURES_DIR:?set HEAL_FIXTURES_DIR to sandbox/stack/infra/dummypay-fixtures}:/dummypay:rw
     ports: !override
-      - "15080:8080"
-      - "15090:9090"
+      - "15380:8080"
+      - "15390:9090"
 
   payments-worker:
     command: go run -tags it ./ worker
     volumes:
       - ${HEAL_FIXTURES_DIR:?set HEAL_FIXTURES_DIR to sandbox/stack/infra/dummypay-fixtures}:/dummypay:rw
     ports: !override
-      - "15191:9090"
+      - "15491:9090"
 
   gateway:
     ports: !override
-      - "15092:80"
+      - "15392:80"
 
   postgres:
     ports: !override
-      - "15432:5432"
+      - "15732:5432"
 
   temporal:
     ports: !override
-      - "15233:7233"
+      - "15533:7233"
 
   console:
     ports: !override
-      - "15000:3000"
+      - "15300:3000"
 
   # Project-scoped names so reruns don't collide on the base compose's fixed names.
   temporal-ui:
-    container_name: formance-payments-sbx-temporal-ui
+    container_name: fpay-sbx-s3-temporal-ui
     ports: !override
-      - "15081:8080"
+      - "15381:8080"
   temporal-admin-tools:
-    container_name: formance-payments-sbx-temporal-admin-tools
+    container_name: fpay-sbx-s3-temporal-admin-tools
