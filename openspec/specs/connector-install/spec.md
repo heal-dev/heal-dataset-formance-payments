@@ -1,4 +1,4 @@
-# Install Connector
+# FPY-C12 — Install Connector
 
 ## Purpose
 
@@ -8,7 +8,7 @@ _Source: `payments/internal/api/v3/router.go:83-83`, `payments/internal/api/v3/h
 
 ## Requirements
 
-### Requirement: Install a connector
+### Requirement: FPY-C12-R01 — Install a connector
 
 The system SHALL let the Ops Engineer install a PSP connector with its config.
 
@@ -18,7 +18,7 @@ _Source: `payments/internal/api/v3/handler_connectors_install.go:16-46`, `paymen
 
 - GIVEN the Ops Engineer on the app
 
-### Requirement: Ops Engineer installs a connector for a known provider with a valid config (POST /v3/connectors/install/{connector})
+### Requirement: FPY-C12-R02 — Ops Engineer installs a connector for a known provider with a valid config (POST /v3/connectors/install/{connector})
 
 When the Ops Engineer installs a connector for a known provider with a valid config (POST /v3/connectors/install/{connector}), the system SHALL accept the request (202) and return the new connector id in {data}, and the connector SHALL appear in GET /v3/connectors with fields name, provider, reference, config{directory,pollingPeriod,name}, capabilities[], scheduledForDeletion, createdAt, updatedAt. [CRAWL-CONFIRMED: 202 → {data:<base64 connectorID>}; list row capabilities include FETCH_ACCOUNTS, FETCH_BALANCES, CREATE_TRANSFER, CREATE_PAYOUT; pollingPeriod normalized to '30m0s'.]
 
@@ -30,7 +30,7 @@ _Source: `payments/internal/api/v3/handler_connectors_install.go:37-44`, `paymen
 - WHEN the Ops Engineer installs a connector for a known provider with a valid config (POST /v3/connectors/install/{connector})
 - THEN the system shall accept the request (202) and return the new connector id in {data}, and the connector shall appear in GET /v3/connectors with fields name, provider, reference, config{directory,pollingPeriod,name}, capabilities[], scheduledForDeletion, createdAt, updatedAt. [CRAWL-CONFIRMED: 202 → {data:<base64 connectorID>}; list row capabilities include FETCH_ACCOUNTS, FETCH_BALANCES, CREATE_TRANSFER, CREATE_PAYOUT; pollingPeriod normalized to '30m0s'.]
 
-### Requirement: Install config is valid JSON but fails provider config validation (e.g. missing required field 'name' or 'directory')
+### Requirement: FPY-C12-R03 — Install config is valid JSON but fails provider config validation (e.g. missing required field 'name' or 'directory')
 
 When the install config is valid JSON but fails provider config validation (e.g. missing required field 'name' or 'directory'), the system SHALL reject it with 400 VALIDATION and not create a connector. [CRAWL-CONFIRMED: POST {} → 400 {errorCode:VALIDATION, 'Config.Name ... required'}; POST {name} → 400 {errorCode:VALIDATION, 'Config.Directory ... required'}.]
 
@@ -42,7 +42,7 @@ _Source: `payments/internal/api/v3/handler_connectors_install.go:37-42`_ · _Ref
 - WHEN the install config is valid JSON but fails provider config validation (e.g. missing required field 'name' or 'directory')
 - THEN the system shall reject it with 400 VALIDATION and not create a connector. [CRAWL-CONFIRMED: POST {} → 400 {errorCode:VALIDATION, 'Config.Name ... required'}; POST {name} → 400 {errorCode:VALIDATION, 'Config.Directory ... required'}.]
 
-### Requirement: Install request body is malformed JSON
+### Requirement: FPY-C12-R04 — Install request body is malformed JSON
 
 When the install request body is malformed JSON, the system currently returns 500 INTERNAL (NOT a 400). [CRAWL-DIVERGENCE: expected a 400 Bad Request for a malformed body, but POST a non-JSON body to a known provider → 500 {errorCode:INTERNAL}. The handler's 400 path (handler_connectors_install.go:22-31) only catches io.ReadAll/MaxBytes errors; JSON parsing happens in the provider config unmarshal downstream and surfaces as 500. Candidate bug — adjudicate at verify (bug-gap vs spec).]
 
@@ -54,7 +54,7 @@ _Source: `payments/internal/api/v3/handler_connectors_install.go:21-42`_ · _Ref
 - WHEN the install request body is malformed JSON
 - THEN the system currently returns 500 INTERNAL (NOT a 400). [CRAWL-DIVERGENCE: expected a 400 Bad Request for a malformed body, but POST a non-JSON body to a known provider → 500 {errorCode:INTERNAL}. The handler's 400 path (handler_connectors_install.go:22-31) only catches io.ReadAll/MaxBytes errors; JSON parsing happens in the provider config unmarshal downstream and surfaces as 500. Candidate bug — adjudicate at verify (bug-gap vs spec).]
 
-### Requirement: Install is requested for an unknown/unsupported provider (with an otherwise valid-length name)
+### Requirement: FPY-C12-R05 — Install is requested for an unknown/unsupported provider (with an otherwise valid-length name)
 
 When the install is requested for an unknown/unsupported provider (with an otherwise valid-length name), the system currently returns 500 INTERNAL (NOT a clean 4xx). [CRAWL-DIVERGENCE: expected an unknown-provider rejection as a typed 4xx, but POST /v3/connectors/install/nosuchprovider {name:...} → 500 {errorCode:INTERNAL}. Candidate bug — adjudicate at verify.]
 
@@ -66,7 +66,7 @@ _Source: `payments/internal/api/v3/handler_connectors_install.go:35-42`_ · _Ref
 - WHEN the install is requested for an unknown/unsupported provider (with an otherwise valid-length name)
 - THEN the system currently returns 500 INTERNAL (NOT a clean 4xx). [CRAWL-DIVERGENCE: expected an unknown-provider rejection as a typed 4xx, but POST /v3/connectors/install/nosuchprovider {name:...} → 500 {errorCode:INTERNAL}. Candidate bug — adjudicate at verify.]
 
-### Requirement: Install request body is the empty JSON object {} (no config fields)
+### Requirement: FPY-C12-R06 — Install request body is the empty JSON object {} (no config fields)
 
 When the install request body is the empty JSON object {} (no config fields), the system SHALL reject it with 400 VALIDATION because the provider config validation fails on the required Name field. [CRAWL-CONFIRMED 2026-06-24: POST /v3/connectors/install/dummypay -d '{}' → 400 {errorCode:VALIDATION, errorMessage:"invalid config: Key: 'Config.Name' Error:Field validation for 'Name' failed on the 'required' tag"}. DIVERGENCE/CANDIDATE-BUG: a truly EMPTY body ('') or whitespace-only body returns 500 {errorCode:INTERNAL} instead of a clean 4xx — the empty-bytes JSON unmarshal is not caught as ErrMissingOrInvalidBody. Tracked separately; this scenario asserts the clean 400 on {}.]
 
@@ -78,7 +78,7 @@ _Source: `payments/internal/api/v3/handler_connectors_install.go:20-39`_ · _Ref
 - WHEN the install request body is the empty JSON object {} (no config fields)
 - THEN the system shall reject it with 400 VALIDATION because the provider config validation fails on the required Name field. [CRAWL-CONFIRMED 2026-06-24: POST /v3/connectors/install/dummypay -d '{}' → 400 {errorCode:VALIDATION, errorMessage:"invalid config: Key: 'Config.Name' Error:Field validation for 'Name' failed on the 'required' tag"}. DIVERGENCE/CANDIDATE-BUG: a truly EMPTY body ('') or whitespace-only body returns 500 {errorCode:INTERNAL} instead of a clean 4xx — the empty-bytes JSON unmarshal is not caught as ErrMissingOrInvalidBody. Tracked separately; this scenario asserts the clean 400 on {}.]
 
-### Requirement: Install request body exceeds the connector config size limit (>500000 bytes)
+### Requirement: FPY-C12-R07 — Install request body exceeds the connector config size limit (>500000 bytes)
 
 When the install request body exceeds the connector config size limit (>500000 bytes), the system SHALL reject it with 413 Request Entity Too Large. [CRAWL-CONFIRMED 2026-06-24: POST with a ~600KB body → 413 {errorCode:MISSING_OR_INVALID_BODY, errorMessage:'http: request body too large'} — matches the http.MaxBytesReader(connectorConfigMaxBytes=500000) → MaxBytesError → WriteErrorResponse(StatusRequestEntityTooLarge, ErrMissingOrInvalidBody) path.]
 

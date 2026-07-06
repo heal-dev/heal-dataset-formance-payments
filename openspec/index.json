@@ -1,0 +1,710 @@
+{
+  "dataset": "heal-dataset-formance-payments",
+  "app": "formance-payments",
+  "code": "FPY",
+  "capabilities": [
+    {
+      "index": "FPY-C01",
+      "id": "payment-initiation-create",
+      "name": "Create Payment Initiation (Transfer/Payout)",
+      "path": "specs/payment-initiation-create/spec.md",
+      "requirements": [
+        {
+          "index": "FPY-C01-R01",
+          "title": "Create a payment initiation",
+          "kind": "flow",
+          "sourceId": "payment-initiation-create-flow",
+          "refTest": "sandbox/e2e/flows/payment-initiation-create.spec.ts"
+        },
+        {
+          "index": "FPY-C01-R02",
+          "title": "Ops Engineer initiates a TRANSFER between two internal accounts (POST /v3/payment-initiations",
+          "kind": "scenario",
+          "sourceId": "PIC-S1",
+          "refTest": "sandbox/e2e/flows/payment-initiation-create.spec.ts"
+        },
+        {
+          "index": "FPY-C01-R03",
+          "title": "Ops Engineer initiates a PAYOUT to a forwarded external account (POST /v3/payment-initiations",
+          "kind": "scenario",
+          "sourceId": "PIC-S2",
+          "refTest": "sandbox/e2e/scenarios/payment-initiation-create/PIC-S2-payout.spec.ts"
+        },
+        {
+          "index": "FPY-C01-R04",
+          "title": "A required field is missing (e.g. destinationAccountID",
+          "kind": "scenario",
+          "sourceId": "PIC-S3",
+          "refTest": "sandbox/e2e/scenarios/payment-initiation-create/PIC-validation-guards.spec.ts"
+        },
+        {
+          "index": "FPY-C01-R05",
+          "title": "ScheduledAt is in the past",
+          "kind": "scenario",
+          "sourceId": "PIC-S4",
+          "refTest": "sandbox/e2e/scenarios/payment-initiation-create/PIC-validation-guards.spec.ts"
+        },
+        {
+          "index": "FPY-C01-R06",
+          "title": "Type is not a valid payment initiation type (not TRANSFER/PAYOUT)",
+          "kind": "scenario",
+          "sourceId": "PIC-S5",
+          "refTest": "sandbox/e2e/scenarios/payment-initiation-create/PIC-validation-guards.spec.ts"
+        },
+        {
+          "index": "FPY-C01-R07",
+          "title": "Reference is shorter than 3 characters (fails gte=3)",
+          "kind": "scenario",
+          "sourceId": "PIC-S6",
+          "refTest": "sandbox/e2e/scenarios/payment-initiation-create/PIC-validation-guards-2.spec.ts"
+        },
+        {
+          "index": "FPY-C01-R08",
+          "title": "Asset is not a valid asset (fails the asset validator)",
+          "kind": "scenario",
+          "sourceId": "PIC-S7",
+          "refTest": "sandbox/e2e/scenarios/payment-initiation-create/PIC-validation-guards-2.spec.ts"
+        },
+        {
+          "index": "FPY-C01-R09",
+          "title": "Pic s8",
+          "kind": "scenario",
+          "sourceId": "PIC-S8",
+          "refTest": "sandbox/e2e/scenarios/payment-initiation-create/PIC-validation-guards-2.spec.ts"
+        }
+      ]
+    },
+    {
+      "index": "FPY-C02",
+      "id": "payment-initiation-reverse",
+      "name": "Reverse Payment Initiation",
+      "path": "specs/payment-initiation-reverse/spec.md",
+      "requirements": [
+        {
+          "index": "FPY-C02-R01",
+          "title": "Reverse a payment initiation",
+          "kind": "flow",
+          "sourceId": "payment-initiation-reverse-flow",
+          "refTest": "sandbox/e2e/flows/payment-initiation-reverse.spec.ts"
+        },
+        {
+          "index": "FPY-C02-R02",
+          "title": "Ops Engineer reverses an existing payment initiation (POST /v3/payment-initiations/{id}/reverse with a valid {reference",
+          "kind": "scenario",
+          "sourceId": "PIR-S1",
+          "refTest": "sandbox/e2e/flows/payment-initiation-reverse.spec.ts"
+        },
+        {
+          "index": "FPY-C02-R03",
+          "title": "Reverse is requested with a malformed/invalid payment initiation id (not a valid PaymentInitiationID)",
+          "kind": "scenario",
+          "sourceId": "PIR-S2",
+          "refTest": "sandbox/e2e/scenarios/payment-initiation-reverse/PIR-validation-guards.spec.ts"
+        },
+        {
+          "index": "FPY-C02-R04",
+          "title": "Reverse body is missing a required field (reference",
+          "kind": "scenario",
+          "sourceId": "PIR-S3",
+          "refTest": "sandbox/e2e/scenarios/payment-initiation-reverse/PIR-validation-guards.spec.ts"
+        },
+        {
+          "index": "FPY-C02-R05",
+          "title": "Reverse body carries an invalid asset (fails the asset format validator)",
+          "kind": "scenario",
+          "sourceId": "PIR-S4",
+          "refTest": "sandbox/e2e/scenarios/payment-initiation-reverse/PIR-validation-guards.spec.ts"
+        },
+        {
+          "index": "FPY-C02-R06",
+          "title": "Reverse targets a well-formed but non-existent payment initiation id (valid id encoding",
+          "kind": "scenario",
+          "sourceId": "PIR-S5",
+          "refTest": "sandbox/e2e/scenarios/payment-initiation-reverse/PIR-S5-nonexistent.spec.ts"
+        }
+      ]
+    },
+    {
+      "index": "FPY-C03",
+      "id": "account-polling",
+      "name": "Account Polling",
+      "path": "specs/account-polling/spec.md",
+      "requirements": [
+        {
+          "index": "FPY-C03-R01",
+          "title": "Worker polls the connector's accounts on install",
+          "kind": "flow",
+          "sourceId": "account-polling-flow",
+          "refTest": "sandbox/e2e/flows/account-polling.spec.ts"
+        },
+        {
+          "index": "FPY-C03-R02",
+          "title": "Ops Engineer installs a connector",
+          "kind": "scenario",
+          "sourceId": "AP-S1",
+          "refTest": "sandbox/e2e/flows/account-polling.spec.ts"
+        },
+        {
+          "index": "FPY-C03-R03",
+          "title": "A bank account is created and forwarded to the connector",
+          "kind": "scenario",
+          "sourceId": "AP-S2",
+          "refTest": "sandbox/e2e/scenarios/account-polling/AP-S2-external-account.spec.ts"
+        },
+        {
+          "index": "FPY-C03-R04",
+          "title": "Ap s3",
+          "kind": "scenario",
+          "sourceId": "AP-S3",
+          "refTest": null
+        },
+        {
+          "index": "FPY-C03-R05",
+          "title": "An account is fetched by a malformed account id (GET /v3/accounts/{bad-id})",
+          "kind": "scenario",
+          "sourceId": "AP-S4",
+          "refTest": "sandbox/e2e/scenarios/account-polling/AP-account-get-guards.spec.ts"
+        },
+        {
+          "index": "FPY-C03-R06",
+          "title": "An account is fetched by a well-formed but non-existent account id",
+          "kind": "scenario",
+          "sourceId": "AP-S5",
+          "refTest": "sandbox/e2e/scenarios/account-polling/AP-account-get-guards.spec.ts"
+        }
+      ]
+    },
+    {
+      "index": "FPY-C04",
+      "id": "balance-polling",
+      "name": "Balance Polling",
+      "path": "specs/balance-polling/spec.md",
+      "requirements": [
+        {
+          "index": "FPY-C04-R01",
+          "title": "Worker polls the connector's account balances",
+          "kind": "flow",
+          "sourceId": "balance-polling-flow",
+          "refTest": "sandbox/e2e/flows/balance-polling.spec.ts"
+        },
+        {
+          "index": "FPY-C04-R02",
+          "title": "A connector is installed and its internal accounts are polled",
+          "kind": "scenario",
+          "sourceId": "BP-S1",
+          "refTest": "sandbox/e2e/flows/balance-polling.spec.ts"
+        },
+        {
+          "index": "FPY-C04-R03",
+          "title": "Balances are requested for a malformed account id (GET /v3/accounts/{bad-id}/balances)",
+          "kind": "scenario",
+          "sourceId": "BP-S2",
+          "refTest": "sandbox/e2e/scenarios/balance-polling/BP-S2-invalid-id.spec.ts"
+        },
+        {
+          "index": "FPY-C04-R04",
+          "title": "Balances are requested for a well-formed but non-existent account id",
+          "kind": "scenario",
+          "sourceId": "BP-S3",
+          "refTest": "sandbox/e2e/scenarios/balance-polling/BP-balance-guards.spec.ts"
+        },
+        {
+          "index": "FPY-C04-R05",
+          "title": "Balances are requested with an invalid pageSize query param",
+          "kind": "scenario",
+          "sourceId": "BP-S4",
+          "refTest": "sandbox/e2e/scenarios/balance-polling/BP-balance-guards.spec.ts"
+        }
+      ]
+    },
+    {
+      "index": "FPY-C05",
+      "id": "payment-polling",
+      "name": "Payment Polling",
+      "path": "specs/payment-polling/spec.md",
+      "requirements": [
+        {
+          "index": "FPY-C05-R01",
+          "title": "Worker polls the connector's payments",
+          "kind": "flow",
+          "sourceId": "payment-polling-flow",
+          "refTest": null
+        },
+        {
+          "index": "FPY-C05-R02",
+          "title": "A connector whose PSP has payments is installed",
+          "kind": "scenario",
+          "sourceId": "PP-S1",
+          "refTest": null
+        },
+        {
+          "index": "FPY-C05-R03",
+          "title": "Pp s2",
+          "kind": "scenario",
+          "sourceId": "PP-S2",
+          "refTest": "sandbox/e2e/scenarios/payment-polling/PP-S2-payments-list.spec.ts"
+        },
+        {
+          "index": "FPY-C05-R04",
+          "title": "A payment is fetched by a malformed payment id (GET /v3/payments/{bad-id})",
+          "kind": "scenario",
+          "sourceId": "PP-S3",
+          "refTest": "sandbox/e2e/scenarios/payment-polling/PP-payment-guards.spec.ts"
+        },
+        {
+          "index": "FPY-C05-R05",
+          "title": "A payment is fetched by a well-formed but non-existent payment id",
+          "kind": "scenario",
+          "sourceId": "PP-S4",
+          "refTest": "sandbox/e2e/scenarios/payment-polling/PP-payment-guards.spec.ts"
+        },
+        {
+          "index": "FPY-C05-R06",
+          "title": "Pp s5",
+          "kind": "scenario",
+          "sourceId": "PP-S5",
+          "refTest": "sandbox/e2e/scenarios/payment-polling/PP-payment-guards.spec.ts"
+        }
+      ]
+    },
+    {
+      "index": "FPY-C06",
+      "id": "pool-management",
+      "name": "Pool Management",
+      "path": "specs/pool-management/spec.md",
+      "requirements": [
+        {
+          "index": "FPY-C06-R01",
+          "title": "Create a pool grouping accounts and read its aggregate balances",
+          "kind": "flow",
+          "sourceId": "pool-management-flow",
+          "refTest": "sandbox/e2e/flows/pool-management.spec.ts"
+        },
+        {
+          "index": "FPY-C06-R02",
+          "title": "Ops Engineer creates a static pool grouping two internal accounts (POST /v3/pools {name",
+          "kind": "scenario",
+          "sourceId": "PM-S1",
+          "refTest": "sandbox/e2e/flows/pool-management.spec.ts"
+        },
+        {
+          "index": "FPY-C06-R03",
+          "title": "A pool is created without a name (POST /v3/pools without name)",
+          "kind": "scenario",
+          "sourceId": "PM-S2",
+          "refTest": "sandbox/e2e/scenarios/pool-management/PM-edges.spec.ts"
+        },
+        {
+          "index": "FPY-C06-R04",
+          "title": "Ops Engineer deletes a pool (DELETE /v3/pools/{poolID})",
+          "kind": "scenario",
+          "sourceId": "PM-S3",
+          "refTest": "sandbox/e2e/scenarios/pool-management/PM-edges.spec.ts"
+        },
+        {
+          "index": "FPY-C06-R05",
+          "title": "A static pool is created with a malformed accountID in accountIDs (fails the dive",
+          "kind": "scenario",
+          "sourceId": "PM-S4",
+          "refTest": "sandbox/e2e/scenarios/pool-management/PM-edges-2.spec.ts"
+        },
+        {
+          "index": "FPY-C06-R06",
+          "title": "A pool is fetched by a well-formed but non-existent pool id (GET /v3/pools/{id})",
+          "kind": "scenario",
+          "sourceId": "PM-S5",
+          "refTest": "sandbox/e2e/scenarios/pool-management/PM-edges-2.spec.ts"
+        },
+        {
+          "index": "FPY-C06-R07",
+          "title": "Latest balances are requested for a well-formed but non-existent pool id (GET /v3/pools/{id}/balances/latest)",
+          "kind": "scenario",
+          "sourceId": "PM-S6",
+          "refTest": "sandbox/e2e/scenarios/pool-management/PM-edges-2.spec.ts"
+        },
+        {
+          "index": "FPY-C06-R08",
+          "title": "A pool is fetched by a malformed (non-UUID) pool id",
+          "kind": "scenario",
+          "sourceId": "PM-S7",
+          "refTest": "sandbox/e2e/scenarios/pool-management/PM-edges-2.spec.ts"
+        }
+      ]
+    },
+    {
+      "index": "FPY-C07",
+      "id": "webhook-events",
+      "name": "Webhook Events",
+      "path": "specs/webhook-events/spec.md",
+      "requirements": [
+        {
+          "index": "FPY-C07-R01",
+          "title": "Ingest an inbound PSP webhook",
+          "kind": "flow",
+          "sourceId": "webhook-events-flow",
+          "refTest": null
+        },
+        {
+          "index": "FPY-C07-R02",
+          "title": "PSP posts a valid webhook event to /v3/connectors/webhooks/{connectorID}/<path>",
+          "kind": "scenario",
+          "sourceId": "WE-S1",
+          "refTest": null
+        },
+        {
+          "index": "FPY-C07-R03",
+          "title": "A webhook is posted to a malformed connector id (/v3/connectors/webhooks/not-a-valid-id/...)",
+          "kind": "scenario",
+          "sourceId": "WE-S2",
+          "refTest": "sandbox/e2e/scenarios/webhook-events/WE-edges.spec.ts"
+        },
+        {
+          "index": "FPY-C07-R04",
+          "title": "A webhook is posted to a well-formed connector that has no webhook configuration registered (e.g. dummypay)",
+          "kind": "scenario",
+          "sourceId": "WE-S3",
+          "refTest": "sandbox/e2e/scenarios/webhook-events/WE-edges.spec.ts"
+        },
+        {
+          "index": "FPY-C07-R05",
+          "title": "A webhook is posted to a well-formed but NON-EXISTENT connector id",
+          "kind": "scenario",
+          "sourceId": "WE-S4",
+          "refTest": "sandbox/e2e/scenarios/webhook-events/WE-S4-nonexistent-connector.spec.ts"
+        }
+      ]
+    },
+    {
+      "index": "FPY-C08",
+      "id": "payment-service-user-connections",
+      "name": "Payment Service User Connections",
+      "path": "specs/payment-service-user-connections/spec.md",
+      "requirements": [
+        {
+          "index": "FPY-C08-R01",
+          "title": "Create and manage a payment service user",
+          "kind": "flow",
+          "sourceId": "payment-service-user-manage-flow",
+          "refTest": "sandbox/e2e/flows/payment-service-user-manage.spec.ts"
+        },
+        {
+          "index": "FPY-C08-R02",
+          "title": "Ops Engineer creates a payment service user (POST /v3/payment-service-users {name})",
+          "kind": "scenario",
+          "sourceId": "PSU-S1",
+          "refTest": "sandbox/e2e/flows/payment-service-user-manage.spec.ts"
+        },
+        {
+          "index": "FPY-C08-R03",
+          "title": "A PSU is created without a name (POST /v3/payment-service-users without name)",
+          "kind": "scenario",
+          "sourceId": "PSU-S2",
+          "refTest": "sandbox/e2e/scenarios/payment-service-user-connections/PSU-edges.spec.ts"
+        },
+        {
+          "index": "FPY-C08-R04",
+          "title": "Ops Engineer deletes a PSU (DELETE /v3/payment-service-users/{psuID})",
+          "kind": "scenario",
+          "sourceId": "PSU-S3",
+          "refTest": "sandbox/e2e/scenarios/payment-service-user-connections/PSU-edges.spec.ts"
+        },
+        {
+          "index": "FPY-C08-R05",
+          "title": "Psu s4",
+          "kind": "scenario",
+          "sourceId": "PSU-S4",
+          "refTest": null
+        },
+        {
+          "index": "FPY-C08-R06",
+          "title": "A PSU is created with an invalid contact email (fails the email validator)",
+          "kind": "scenario",
+          "sourceId": "PSU-S5",
+          "refTest": "sandbox/e2e/scenarios/payment-service-user-connections/PSU-edges-2.spec.ts"
+        },
+        {
+          "index": "FPY-C08-R07",
+          "title": "A PSU is created with a malformed bankAccountID (fails the dive",
+          "kind": "scenario",
+          "sourceId": "PSU-S6",
+          "refTest": "sandbox/e2e/scenarios/payment-service-user-connections/PSU-edges-2.spec.ts"
+        },
+        {
+          "index": "FPY-C08-R08",
+          "title": "A PSU is fetched by a well-formed but non-existent id (GET /v3/payment-service-users/{id})",
+          "kind": "scenario",
+          "sourceId": "PSU-S7",
+          "refTest": "sandbox/e2e/scenarios/payment-service-user-connections/PSU-edges-2.spec.ts"
+        },
+        {
+          "index": "FPY-C08-R09",
+          "title": "A non-existent PSU is deleted (DELETE /v3/payment-service-users/{id} for a well-formed but unknown id)",
+          "kind": "scenario",
+          "sourceId": "PSU-S8",
+          "refTest": "sandbox/e2e/scenarios/payment-service-user-connections/PSU-edges-2.spec.ts"
+        }
+      ]
+    },
+    {
+      "index": "FPY-C09",
+      "id": "bank-account-forward",
+      "name": "Forward Bank Account",
+      "path": "specs/bank-account-forward/spec.md",
+      "requirements": [
+        {
+          "index": "FPY-C09-R01",
+          "title": "Forward a bank account to a connector",
+          "kind": "flow",
+          "sourceId": "bank-account-forward-flow",
+          "refTest": "sandbox/e2e/flows/bank-account-forward.spec.ts"
+        },
+        {
+          "index": "FPY-C09-R02",
+          "title": "Ops Engineer forwards an existing bank account to an installed connector (POST /v3/bank-accounts/{id}/forward {connectorID})",
+          "kind": "scenario",
+          "sourceId": "BF-S1",
+          "refTest": null
+        },
+        {
+          "index": "FPY-C09-R03",
+          "title": "Forward is requested with a malformed bank account id (not a UUID)",
+          "kind": "scenario",
+          "sourceId": "BF-S2",
+          "refTest": "sandbox/e2e/scenarios/bank-account-forward/BF-validation-guards.spec.ts"
+        },
+        {
+          "index": "FPY-C09-R04",
+          "title": "Forward is requested without a connectorID in the body",
+          "kind": "scenario",
+          "sourceId": "BF-S3",
+          "refTest": "sandbox/e2e/scenarios/bank-account-forward/BF-validation-guards.spec.ts"
+        },
+        {
+          "index": "FPY-C09-R05",
+          "title": "Forward references a well-formed but non-existent connectorID",
+          "kind": "scenario",
+          "sourceId": "BF-S4",
+          "refTest": "sandbox/e2e/scenarios/bank-account-forward/BF-validation-guards.spec.ts"
+        },
+        {
+          "index": "FPY-C09-R06",
+          "title": "Forward targets a well-formed but non-existent bank account id (valid UUID",
+          "kind": "scenario",
+          "sourceId": "BF-S5",
+          "refTest": "sandbox/e2e/scenarios/bank-account-forward/BF-S5-nonexistent-account.spec.ts"
+        }
+      ]
+    },
+    {
+      "index": "FPY-C10",
+      "id": "bank-account-create",
+      "name": "Create Bank Account",
+      "path": "specs/bank-account-create/spec.md",
+      "requirements": [
+        {
+          "index": "FPY-C10-R01",
+          "title": "Create a bank account",
+          "kind": "flow",
+          "sourceId": "bank-account-create-flow",
+          "refTest": "sandbox/e2e/flows/bank-account-create.spec.ts"
+        },
+        {
+          "index": "FPY-C10-R02",
+          "title": "Ops Engineer creates a bank account with a name and an IBAN (POST /v3/bank-accounts)",
+          "kind": "scenario",
+          "sourceId": "BC-S1",
+          "refTest": null
+        },
+        {
+          "index": "FPY-C10-R03",
+          "title": "Bank account is created without a name",
+          "kind": "scenario",
+          "sourceId": "BC-S2",
+          "refTest": "sandbox/e2e/scenarios/bank-account-create/BC-validation-guards.spec.ts"
+        },
+        {
+          "index": "FPY-C10-R04",
+          "title": "Bank account is created with neither an accountNumber nor an IBAN",
+          "kind": "scenario",
+          "sourceId": "BC-S3",
+          "refTest": "sandbox/e2e/scenarios/bank-account-create/BC-validation-guards.spec.ts"
+        },
+        {
+          "index": "FPY-C10-R05",
+          "title": "Bank account is created with an IBAN shorter than 15 characters",
+          "kind": "scenario",
+          "sourceId": "BC-S4",
+          "refTest": "sandbox/e2e/scenarios/bank-account-create/BC-validation-guards.spec.ts"
+        },
+        {
+          "index": "FPY-C10-R06",
+          "title": "A bank account is created with an invalid ISO country code (Country fails the country_code validator)",
+          "kind": "scenario",
+          "sourceId": "BC-S5",
+          "refTest": "sandbox/e2e/scenarios/bank-account-create/BC-validation-guards-2.spec.ts"
+        },
+        {
+          "index": "FPY-C10-R07",
+          "title": "A bank account is created with an IBAN longer than 31 characters (fails the lte=31 validator)",
+          "kind": "scenario",
+          "sourceId": "BC-S6",
+          "refTest": "sandbox/e2e/scenarios/bank-account-create/BC-validation-guards-2.spec.ts"
+        },
+        {
+          "index": "FPY-C10-R08",
+          "title": "A bank account is created with a swiftBicCode shorter than 8 characters (fails the gte=8 validator)",
+          "kind": "scenario",
+          "sourceId": "BC-S7",
+          "refTest": "sandbox/e2e/scenarios/bank-account-create/BC-validation-guards-2.spec.ts"
+        }
+      ]
+    },
+    {
+      "index": "FPY-C11",
+      "id": "connector-uninstall",
+      "name": "Uninstall Connector",
+      "path": "specs/connector-uninstall/spec.md",
+      "requirements": [
+        {
+          "index": "FPY-C11-R01",
+          "title": "Uninstall a connector",
+          "kind": "flow",
+          "sourceId": "connector-uninstall-flow",
+          "refTest": "sandbox/e2e/flows/connector-uninstall.spec.ts"
+        },
+        {
+          "index": "FPY-C11-R02",
+          "title": "Ops Engineer uninstalls an installed connector (DELETE /v3/connectors/{connectorID})",
+          "kind": "scenario",
+          "sourceId": "CU-S1",
+          "refTest": null
+        },
+        {
+          "index": "FPY-C11-R03",
+          "title": "Uninstall is requested with a malformed/invalid connector id",
+          "kind": "scenario",
+          "sourceId": "CU-S2",
+          "refTest": "sandbox/e2e/scenarios/connector-uninstall/CU-S2-invalid-id.spec.ts"
+        },
+        {
+          "index": "FPY-C11-R04",
+          "title": "Uninstall targets a well-formed but non-existent connector id",
+          "kind": "scenario",
+          "sourceId": "CU-S3",
+          "refTest": "sandbox/e2e/scenarios/connector-uninstall/CU-S3-nonexistent.spec.ts"
+        }
+      ]
+    },
+    {
+      "index": "FPY-C12",
+      "id": "connector-install",
+      "name": "Install Connector",
+      "path": "specs/connector-install/spec.md",
+      "requirements": [
+        {
+          "index": "FPY-C12-R01",
+          "title": "Install a connector",
+          "kind": "flow",
+          "sourceId": "connector-install-flow",
+          "refTest": "sandbox/e2e/flows/connector-install.spec.ts"
+        },
+        {
+          "index": "FPY-C12-R02",
+          "title": "Ops Engineer installs a connector for a known provider with a valid config (POST /v3/connectors/install/{connector})",
+          "kind": "scenario",
+          "sourceId": "CI-S1",
+          "refTest": null
+        },
+        {
+          "index": "FPY-C12-R03",
+          "title": "Install config is valid JSON but fails provider config validation (e.g. missing required field 'name' or 'directory')",
+          "kind": "scenario",
+          "sourceId": "CI-S2",
+          "refTest": "sandbox/e2e/scenarios/connector-install/CI-S2-config-validation.spec.ts"
+        },
+        {
+          "index": "FPY-C12-R04",
+          "title": "Install request body is malformed JSON",
+          "kind": "scenario",
+          "sourceId": "CI-S3",
+          "refTest": "sandbox/e2e/scenarios/connector-install/CI-S3-malformed-body.spec.ts"
+        },
+        {
+          "index": "FPY-C12-R05",
+          "title": "Install is requested for an unknown/unsupported provider (with an otherwise valid-length name)",
+          "kind": "scenario",
+          "sourceId": "CI-S4",
+          "refTest": "sandbox/e2e/scenarios/connector-install/CI-S4-unknown-provider.spec.ts"
+        },
+        {
+          "index": "FPY-C12-R06",
+          "title": "Install request body is the empty JSON object {} (no config fields)",
+          "kind": "scenario",
+          "sourceId": "CI-S5",
+          "refTest": "sandbox/e2e/scenarios/connector-install/CI-S5-empty-config.spec.ts"
+        },
+        {
+          "index": "FPY-C12-R07",
+          "title": "Install request body exceeds the connector config size limit (>500000 bytes)",
+          "kind": "scenario",
+          "sourceId": "CI-S6",
+          "refTest": "sandbox/e2e/scenarios/connector-install/CI-S6-oversized-body.spec.ts"
+        }
+      ]
+    }
+  ],
+  "journeys": [
+    {
+      "index": "FPY-J01",
+      "id": "onboard-connector-basic",
+      "title": "Connector Installation & Discovery",
+      "path": "journeys.md",
+      "capabilities": [
+        "connector-install",
+        "account-polling",
+        "balance-polling"
+      ],
+      "refTest": "sandbox/e2e/journeys/onboard-connector-basic.spec.ts"
+    },
+    {
+      "index": "FPY-J02",
+      "id": "execute-internal-transfer",
+      "title": "Internal Transfer Execution",
+      "path": "journeys.md",
+      "capabilities": [
+        "connector-install",
+        "account-polling",
+        "payment-initiation-create"
+      ],
+      "refTest": "sandbox/e2e/journeys/execute-internal-transfer.spec.ts"
+    },
+    {
+      "index": "FPY-J03",
+      "id": "pool-balance-snapshot",
+      "title": "Account Pool & Balance Aggregation",
+      "path": "journeys.md",
+      "capabilities": [
+        "connector-install",
+        "account-polling",
+        "pool-management",
+        "balance-polling"
+      ],
+      "refTest": "sandbox/e2e/journeys/pool-balance-snapshot.spec.ts"
+    },
+    {
+      "index": "FPY-J04",
+      "id": "payout-to-external-account",
+      "title": "Payout Workflow with Reversal",
+      "path": "journeys.md",
+      "capabilities": [
+        "connector-install",
+        "account-polling",
+        "bank-account-create",
+        "bank-account-forward",
+        "payment-initiation-create",
+        "payment-initiation-reverse"
+      ],
+      "refTest": "sandbox/e2e/journeys/payout-to-external-account.spec.ts"
+    }
+  ]
+}

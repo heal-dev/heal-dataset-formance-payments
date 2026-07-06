@@ -1,4 +1,4 @@
-# Uninstall Connector
+# FPY-C11 — Uninstall Connector
 
 ## Purpose
 
@@ -8,7 +8,7 @@ _Source: `payments/internal/api/v3/router.go:89-89`, `payments/internal/api/v3/h
 
 ## Requirements
 
-### Requirement: Uninstall a connector
+### Requirement: FPY-C11-R01 — Uninstall a connector
 
 The system SHALL let the Ops Engineer uninstall a connector.
 
@@ -18,7 +18,7 @@ _Source: `payments/internal/api/v3/handler_connectors_uninstall.go:18-42`, `paym
 
 - GIVEN the Ops Engineer on the app
 
-### Requirement: Ops Engineer uninstalls an installed connector (DELETE /v3/connectors/{connectorID})
+### Requirement: FPY-C11-R02 — Ops Engineer uninstalls an installed connector (DELETE /v3/connectors/{connectorID})
 
 When the Ops Engineer uninstalls an installed connector (DELETE /v3/connectors/{connectorID}), the system SHALL accept the request (202) and return {data:{taskID}}, and after the async uninstall task completes (~2-4s) the connector SHALL no longer appear in GET /v3/connectors. [CRAWL-CONFIRMED: 202 → {data:{taskID:<base64>}}; connector present immediately after DELETE, gone within a couple seconds.]
 
@@ -30,7 +30,7 @@ _Source: `payments/internal/api/v3/handler_connectors_uninstall.go:31-40`_
 - WHEN the Ops Engineer uninstalls an installed connector (DELETE /v3/connectors/{connectorID})
 - THEN the system shall accept the request (202) and return {data:{taskID}}, and after the async uninstall task completes (~2-4s) the connector shall no longer appear in GET /v3/connectors. [CRAWL-CONFIRMED: 202 → {data:{taskID:<base64>}}; connector present immediately after DELETE, gone within a couple seconds.]
 
-### Requirement: Uninstall is requested with a malformed/invalid connector id
+### Requirement: FPY-C11-R03 — Uninstall is requested with a malformed/invalid connector id
 
 When the uninstall is requested with a malformed/invalid connector id, the system SHALL reject it with 400 Bad Request and not start an uninstall. [CRAWL-CONFIRMED: DELETE /v3/connectors/not-a-valid-id → 400 {errorCode:INVALID_ID}.]
 
@@ -42,7 +42,7 @@ _Source: `payments/internal/api/v3/handler_connectors_uninstall.go:24-29`_ · _R
 - WHEN the uninstall is requested with a malformed/invalid connector id
 - THEN the system shall reject it with 400 Bad Request and not start an uninstall. [CRAWL-CONFIRMED: DELETE /v3/connectors/not-a-valid-id → 400 {errorCode:INVALID_ID}.]
 
-### Requirement: Uninstall targets a well-formed but non-existent connector id
+### Requirement: FPY-C11-R04 — Uninstall targets a well-formed but non-existent connector id
 
 When the uninstall targets a well-formed but non-existent connector id, the system should reject it with a clean 4xx (e.g. 404 Not Found) and start no uninstall. [CRAWL-DIVERGENCE/CANDIDATE-BUG 2026-06-24: DELETE /v3/connectors/<well-formed base64 id for a connector that does not exist> → 500 {errorCode:INTERNAL} instead of a 4xx. The handler routes every backend error (including not-found) through common.InternalServerError. Adjudicate as a bug-gap at verify.]
 

@@ -2,7 +2,7 @@
 
 Level-0 cross-capability arcs. Each threads several capabilities; the data one step `produces` and a later step `consumes` is the assertion no single-capability test makes.
 
-## Journey: Connector Installation & Discovery
+## Journey: FPY-J01 — Connector Installation & Discovery
 
 - **Id**: `onboard-connector-basic`
 - **Persona**: Ops Engineer
@@ -20,7 +20,7 @@ Level-0 cross-capability arcs. Each threads several capabilities; the data one s
 3. Confirm the polled accounts' balances are visible in the Console account-detail Balances card, matching the seeded fixture amounts  
    _(capability `balance-polling`; produces `balances`; consumes `accounts`)_
 
-## Journey: Internal Transfer Execution
+## Journey: FPY-J02 — Internal Transfer Execution
 
 - **Id**: `execute-internal-transfer`
 - **Persona**: Ops Engineer
@@ -38,7 +38,7 @@ Level-0 cross-capability arcs. Each threads several capabilities; the data one s
 3. Initiate a TRANSFER between the two internal accounts (POST /v3/payment-initiations, type TRANSFER, source=acct-001, destination=acct-002) and confirm it is accepted and recorded as a payment initiation  
    _(capability `payment-initiation-create`; produces `paymentInitiation`; consumes `sourceAccount`, `destinationAccount`, `connectorID`)_
 
-## Journey: Account Pool & Balance Aggregation
+## Journey: FPY-J03 — Account Pool & Balance Aggregation
 
 - **Id**: `pool-balance-snapshot`
 - **Persona**: Ops Engineer
@@ -58,7 +58,7 @@ Level-0 cross-capability arcs. Each threads several capabilities; the data one s
 4. Query the pool's latest aggregate balances (GET /v3/pools/{id}/balances/latest) and confirm the per-asset totals match the seeded fixture balances  
    _(capability `balance-polling`; produces `aggregateBalances`; consumes `pool`)_
 
-## Journey: Payout Workflow with Reversal
+## Journey: FPY-J04 — Payout Workflow with Reversal
 
 - **Id**: `payout-to-external-account`
 - **Persona**: Ops Engineer
