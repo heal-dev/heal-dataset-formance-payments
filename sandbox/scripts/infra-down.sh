@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 
 SANDBOX_DIR="$(pwd)"
 PAYMENTS_DIR="$(cd .. && pwd)/payments"
-PROJECT="formance-payments-sbx"
+PROJECT="fpay-sbx-s2"
 OVERRIDE="$SANDBOX_DIR/stack/infra/docker-compose.heal.yml"
 export HEAL_FIXTURES_DIR="$SANDBOX_DIR/stack/infra/dummypay-fixtures"
 
