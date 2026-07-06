@@ -4,11 +4,11 @@
 // Host ports live in formance-payments' reserved 15xxx block (see
 // heal-datasets-shared/PORTS.md); remapped by stack/infra/docker-compose.heal.yml.
 export const PORTS = {
-  console: 15000, // Console v3 frontend (the entry screen)
-  gateway: 15092, // Caddy gateway → proxies /api to payments
-  api: 15080, // payments server (the SUT)
-  temporalUi: 15081,
-  db: 15432,
+  console: 15400, // Console v3 frontend (the entry screen)
+  gateway: 15492, // Caddy gateway → proxies /api to payments
+  api: 15480, // payments server (the SUT)
+  temporalUi: 15481,
+  db: 15832,
 } as const;
 
 export const CONSOLE_URL = `http://localhost:${PORTS.console}`;
@@ -53,7 +53,7 @@ export const SEED = {
     // pollingPeriod minimum is 20m (server-validated); first poll runs on install.
     pollingPeriod: '30m',
     accounts: [
-      { reference: 'heal-dummy-acct-001', name: 'Heal Dummy Checking', asset: 'USD/2', balanceMinor: 1500000 },
+      { reference: 'heal-dummy-acct-001', name: 'Heal Dummy Checking', asset: 'USD/2', balanceMinor: 1540000 },
       { reference: 'heal-dummy-acct-002', name: 'Heal Dummy Savings', asset: 'EUR/2', balanceMinor: 2750000 },
     ],
   },
@@ -76,7 +76,7 @@ export const SEED = {
   pool: {
     memberRefs: ['heal-dummy-acct-001', 'heal-dummy-acct-002'],
     aggregate: [
-      { asset: 'USD/2', amount: 1500000 },
+      { asset: 'USD/2', amount: 1540000 },
       { asset: 'EUR/2', amount: 2750000 },
     ],
   },
