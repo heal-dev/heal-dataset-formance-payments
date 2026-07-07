@@ -34,4 +34,4 @@ payments
 
 4 cross-capability arcs — see [journeys.md](journeys.md).
 
-_Generated from `sandbox/heal/state/spec.json` by `heal-datasets-shared/scripts/gen-openspec.py`; hand-curated afterwards._
+_Generated from `sandbox/heal/state/spec.json` by `heal-datasets-shared/scripts/gen-openspec.ts`; hand-curated afterwards._
